@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  expense-service:
+    build:
+      context: ../spend-control-expense-service
+      dockerfile: Dockerfile
+    container_name: spend-control-expense-service
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
+      UPLOAD_DIR: /data/uploads
+    ports:
+      - "8001:8001"
+    volumes:
+      - uploads-data:/data/uploads
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 15
+    networks:
+      - spend-control-network
+    restart: unless-stopped
+
+  ai-service:
+    build:
+      context: ../spend-control-ai-service
+      dockerfile: Dockerfile
+    container_name: spend-control-ai-service
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      OLLAMA_REQUEST_TIMEOUT: ${OLLAMA_REQUEST_TIMEOUT:-30}
+    ports:
+      - "8002:8002"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 15
+    networks:
+      - spend-control-network
+    restart: unless-stopped
+
+  control-service:
+    build:
+      context: ../spend-control-control-service
+      dockerfile: Dockerfile
+    container_name: spend-control-control-service
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
+      EXPENSE_SERVICE_URL: ${EXPENSE_SERVICE_URL:-http://expense-service:8001}
+      AI_SERVICE_URL: ${AI_SERVICE_URL:-http://ai-service:8002}
+      RECEIPT_REQUIRED_THRESHOLD: ${RECEIPT_REQUIRED_THRESHOLD:-75}
+    depends_on:
+      - expense-service
+      - ai-service
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 15
+    networks:
+      - spend-control-network
+    restart: unless-stopped
+
+volumes:
+  uploads-data:
+
+networks:
+  spend-control-network:
+    driver: bridge

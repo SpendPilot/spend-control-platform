@@ -1,0 +1,23 @@
+prefix                    = "spendpilot"
+environment               = "prod"
+location                  = "Central India"
+resource_group_name       = "spendpilot-prod-rg"
+admin_username            = "azureuser"
+admin_password            = "ChangeThisBeforeApply-Prod-VmAdmin-123!"
+admin_allowed_cidrs       = ["203.0.113.10/32"]
+frontend_vm_size          = "Standard_D4ds_v5"
+backend_vm_size           = "Standard_D8ds_v5"
+data_vm_size              = "Standard_D4ds_v5"
+postgres_container_image  = "postgres:16"
+postgres_database_name    = "spend_control"
+postgres_app_username     = "spendpilot"
+postgres_app_password     = "ChangeThisBeforeApply-Prod-AppDb-123!"
+postgres_port             = 5432
+ollama_container_image    = "ollama/ollama:latest"
+ollama_model              = "llama3.2"
+ollama_port               = 11434
+
+tags = {
+  owner   = "platform-team"
+  project = "spend-control"
+}

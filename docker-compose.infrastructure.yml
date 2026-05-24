@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: spend-control-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-spendcontrol}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spendcontrol}
+      POSTGRES_DB: ${POSTGRES_DB:-spend_control}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-spendcontrol} -d ${POSTGRES_DB:-spend_control}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - spend-control-network
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: spend-control-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - spend-control-network
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  ollama-data:
+
+networks:
+  spend-control-network:
+    driver: bridge

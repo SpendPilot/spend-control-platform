@@ -1,0 +1,12 @@
+prefix                  = "spendpilot"
+environment             = "prod"
+location                = "Central India"
+resource_group_name     = "spendpilot-prod-rg"
+aks_node_resource_group_name = "spendpilot-prod-aks-nodes-rg"
+postgres_admin_login    = "spendpilotadmin"
+postgres_admin_password = "ReplaceWithStrongPassword!"
+
+tags = {
+  owner   = "platform-team"
+  project = "spend-control"
+}

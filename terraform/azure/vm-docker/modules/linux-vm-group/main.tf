@@ -1,0 +1,71 @@
+resource "azurerm_network_interface" "this" {
+  count               = length(var.vm_names)
+  name                = "${var.vm_names[count.index]}-nic"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = var.subnet_id
+    private_ip_address_allocation = "Dynamic"
+  }
+}
+
+resource "azurerm_linux_virtual_machine" "this" {
+  count                           = length(var.vm_names)
+  name                            = var.vm_names[count.index]
+  resource_group_name             = var.resource_group_name
+  location                        = var.location
+  size                            = var.vm_size
+  admin_username                  = var.admin_username
+  admin_password                  = var.admin_password
+  disable_password_authentication = false
+  network_interface_ids           = [azurerm_network_interface.this[count.index].id]
+  zone                            = element(var.zones, count.index % length(var.zones))
+  tags                            = var.tags
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Premium_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts-gen2"
+    version   = "latest"
+  }
+
+  custom_data = base64encode(templatefile("${path.module}/templates/install-docker.tftpl", {
+    node_role         = var.node_role
+    postgres_enabled  = var.postgres_enabled
+    postgres_image    = var.postgres_image
+    postgres_db       = var.postgres_db
+    postgres_user     = var.postgres_user
+    postgres_password = var.postgres_password
+    postgres_port     = var.postgres_port
+    ollama_enabled    = var.ollama_enabled
+    ollama_image      = var.ollama_image
+    ollama_model      = var.ollama_model
+    ollama_port       = var.ollama_port
+  }))
+}
+
+resource "azurerm_network_interface_application_gateway_backend_address_pool_association" "this" {
+  count                   = var.app_gateway_backend_pool_id == null ? 0 : length(var.vm_names)
+  network_interface_id    = azurerm_network_interface.this[count.index].id
+  ip_configuration_name   = "internal"
+  backend_address_pool_id = var.app_gateway_backend_pool_id
+}
+
+resource "azurerm_role_assignment" "acr_pull" {
+  count                = length(var.vm_names)
+  scope                = var.acr_id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_linux_virtual_machine.this[count.index].identity[0].principal_id
+}

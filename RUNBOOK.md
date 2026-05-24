@@ -7,12 +7,153 @@
 - `../spend-control-expense-service`
 - `../spend-control-ai-service`
 
-## Bring up the full stack
+## Quick Start - Clone All Repositories
+
+Use the provided clone script to set up all required repositories in one command:
+
+### Windows (PowerShell)
 
 ```powershell
-cd c:\Users\lijaz\Desktop\PROJECT2\spend-control-platform
-docker compose up --build
+.\clone-all-repos.ps1 -BaseDir "C:\path\to\projects"
 ```
+
+### macOS/Linux (Bash)
+
+```bash
+./clone-all-repos.sh /path/to/projects
+```
+
+## Bring up the full stack - Separated Services
+
+The platform is now organized into three separate Docker Compose files for modularity:
+
+### 1. Start Infrastructure Services (PostgreSQL + Ollama)
+
+Open a terminal and run:
+
+```powershell
+cd spend-control-platform
+Copy-Item .env.example .env  # Copy environment configuration
+docker compose -f docker-compose.infrastructure.yml up --build
+```
+
+Wait for both PostgreSQL and Ollama to show as healthy before proceeding.
+
+### 2. Start Backend Services (Control, Expense, AI Services)
+
+Open a second terminal:
+
+```powershell
+cd spend-control-platform
+docker compose -f docker-compose.backend.yml up --build
+```
+
+This will start:
+- expense-service (port 8001)
+- ai-service (port 8002)
+- control-service (port 8000)
+
+The services will automatically run database migrations on startup.
+
+### 3. Start Frontend
+
+Open a third terminal:
+
+```powershell
+cd spend-control-platform
+docker compose -f docker-compose.frontend.yml up --build
+```
+
+Access the frontend at `http://localhost:3000`
+
+## Environment Configuration
+
+All services use environment variables defined in `.env`. Copy `.env.example` to `.env` and adjust values as needed:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Key variables:
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`: Database credentials
+- `JWT_SECRET_KEY`: Change for production
+- `OLLAMA_MODEL`: LLM model to use
+- `CORS_ORIGINS`: Frontend URL for CORS
+
+## Docker Compose File Reference
+
+### docker-compose.infrastructure.yml
+- **PostgreSQL 16**: Database server on port 5432
+- **Ollama**: LLM inference on port 11434
+- Creates shared `spend-control-network` for service communication
+
+### docker-compose.backend.yml
+- **expense-service**: Port 8001
+- **ai-service**: Port 8002, depends on Ollama
+- **control-service**: Port 8000, orchestrates expense and AI services
+- Services connect to PostgreSQL at `postgres:5432`
+
+### docker-compose.frontend.yml
+- **Next.js Frontend**: Port 3000
+- `NEXT_PUBLIC_API_URL` environment variable controls backend API endpoint
+
+## Azure deployment paths
+
+Use one of these Terraform roots:
+
+- `terraform/azure/aks`
+- `terraform/azure/vm-docker`
+
+Reusable module code is under:
+
+- `terraform/azure/aks/modules`
+- `terraform/azure/vm-docker/modules`
+
+### AKS quick flow
+
+```powershell
+cd c:\Users\lijaz\Desktop\PROJECT2\spend-control-platform\terraform\azure\aks
+copy terraform.tfvars.example terraform.tfvars
+terraform init
+terraform plan
+terraform apply
+```
+
+### Regular VM quick flow
+
+```powershell
+cd c:\Users\lijaz\Desktop\PROJECT2\spend-control-platform\terraform\azure\vm-docker
+copy terraform.tfvars.example terraform.tfvars
+terraform init
+terraform plan
+terraform apply
+```
+
+## Current Azure recommendation
+
+Deploy `AKS` as the long-term production target.
+
+Use `vm-docker` if you want:
+
+- a simpler first Azure rollout
+- fewer moving parts than Kubernetes
+- fixed regular VMs instead of scale sets
+
+## Resource groups
+
+- `vm-docker`: one primary resource group
+- `aks`: one primary resource group plus one Azure-managed node resource group
+
+The extra AKS node resource group is an Azure platform requirement, not extra app sprawl from this Terraform.
+
+## Important app behavior note
+
+The frontend currently calls the API from the browser. Because of that, the Azure design here uses a public edge gateway with path routing:
+
+- `/` to frontend
+- `/api/*` to `control-service`
+
+That keeps the data tier private without breaking the current frontend behavior.
 
 ## Health endpoints
 
@@ -36,6 +177,27 @@ docker version
 
 Compose builds from sibling repos. If one folder is missing, recreate or clone it beside `spend-control-platform`.
 
+### Terraform provider cache or init issues
+
+Re-run init in the affected root:
+
+```powershell
+terraform init -upgrade
+```
+
+### Terraform validation
+
+Both Azure roots were validated locally with:
+
+```powershell
+terraform validate
+```
+
+from:
+
+- `terraform/azure/aks`
+- `terraform/azure/vm-docker`
+
 ### Ollama unavailable
 
 AI falls back safely, but to restore model responses:
@@ -50,4 +212,3 @@ ollama pull llama3.1:8b
 ```powershell
 py -3.13 scripts/smoke_test.py
 ```
-
