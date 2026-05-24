@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: control-migrations
+  namespace: spend-control
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: control-migrations
+          image: spend-control/control-service:latest
+          workingDir: /app
+          command: ["sh", "-c", "alembic upgrade head"]
+          envFrom:
+            - configMapRef:
+                name: spend-control-config
+            - secretRef:
+                name: spend-control-secrets
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: expense-migrations
+  namespace: spend-control
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: expense-migrations
+          image: spend-control/expense-service:latest
+          workingDir: /app
+          command: ["sh", "-c", "alembic upgrade head"]
+          envFrom:
+            - configMapRef:
+                name: spend-control-config
+            - secretRef:
+                name: spend-control-secrets
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ai-migrations
+  namespace: spend-control
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: ai-migrations
+          image: spend-control/ai-service:latest
+          workingDir: /app
+          command: ["sh", "-c", "alembic upgrade head"]
+          envFrom:
+            - configMapRef:
+                name: spend-control-config
+            - secretRef:
+                name: spend-control-secrets
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: demo-seed
+  namespace: spend-control
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: demo-seed
+          image: spend-control/control-service:latest
+          command: ["python", "/app/scripts/seed_demo.py"]
+          envFrom:
+            - configMapRef:
+                name: spend-control-config
+            - secretRef:
+                name: spend-control-secrets

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spend-control-config
+  namespace: spend-control
+data:
+  APP_ENV: "production"
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "spend_control"
+  POSTGRES_USER: "spendcontrol"
+  CORS_ORIGINS: "http://spend-control.local"
+  EXPENSE_SERVICE_URL: "http://expense-service.spend-control.svc.cluster.local:8001"
+  AI_SERVICE_URL: "http://ai-service.spend-control.svc.cluster.local:8002"
+  NEXT_PUBLIC_API_BASE_URL: "http://api.spend-control.local"
+  OLLAMA_BASE_URL: "http://ollama.spend-control.svc.cluster.local:11434"
+  OLLAMA_MODEL: "llama3.1:8b"
+  OLLAMA_REQUEST_TIMEOUT: "30"
+  RECEIPT_REQUIRED_THRESHOLD: "75"
+  UPLOAD_DIR: "/data/uploads"

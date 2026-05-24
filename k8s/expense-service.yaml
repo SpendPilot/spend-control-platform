@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: expense-service
+  namespace: spend-control
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: expense-service
+  template:
+    metadata:
+      labels:
+        app: expense-service
+    spec:
+      containers:
+        - name: expense-service
+          image: spend-control/expense-service:latest
+          ports:
+            - containerPort: 8001
+          envFrom:
+            - configMapRef:
+                name: spend-control-config
+            - secretRef:
+                name: spend-control-secrets
+          volumeMounts:
+            - name: uploads-storage
+              mountPath: /data/uploads
+      volumes:
+        - name: uploads-storage
+          persistentVolumeClaim:
+            claimName: uploads-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: expense-service
+  namespace: spend-control
+spec:
+  selector:
+    app: expense-service
+  ports:
+    - port: 8001
+      targetPort: 8001
+
