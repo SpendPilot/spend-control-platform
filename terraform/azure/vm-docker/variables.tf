@@ -66,6 +66,21 @@ variable "db_subnet_cidr" {
   default = "10.60.30.0/24"
 }
 
+variable "frontend_private_ip" {
+  type    = string
+  default = "10.60.10.4"
+}
+
+variable "backend_private_ip" {
+  type    = string
+  default = "10.60.20.4"
+}
+
+variable "data_private_ip" {
+  type    = string
+  default = "10.60.30.4"
+}
+
 variable "frontend_vm_size" {
   type    = string
   default = "Standard_D4ds_v5"
@@ -127,6 +142,22 @@ variable "ollama_port" {
   description = "Private port exposed by Ollama on the data VM."
   type        = number
   default     = 11434
+}
+
+variable "bootstrap_repo_owner" {
+  type    = string
+  default = "SpendPilot"
+}
+
+variable "bootstrap_repo_branch" {
+  type    = string
+  default = "main"
+}
+
+variable "jwt_secret_key" {
+  type      = string
+  sensitive = true
+  default   = "dev-secret-change-me"
 }
 
 variable "zones" {

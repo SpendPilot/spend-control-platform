@@ -183,58 +183,85 @@ module "app_gateway" {
 module "frontend_vms" {
   source = "./modules/linux-vm-group"
 
-  vm_names                    = local.frontend_vm_names
-  resource_group_name         = module.resource_group.name
-  location                    = module.resource_group.location
-  subnet_id                   = module.network.subnet_ids["frontend-subnet"]
-  vm_size                     = var.frontend_vm_size
-  admin_username              = var.admin_username
-  admin_password              = var.admin_password
-  zones                       = var.zones
-  node_role                   = "frontend"
-  associate_with_app_gateway  = true
-  app_gateway_backend_pool_id = module.app_gateway.backend_pool_ids.frontend
-  tags                        = local.tags
+  vm_names                     = local.frontend_vm_names
+  resource_group_name          = module.resource_group.name
+  location                     = module.resource_group.location
+  subnet_id                    = module.network.subnet_ids["frontend-subnet"]
+  private_ip_addresses         = [var.frontend_private_ip]
+  vm_size                      = var.frontend_vm_size
+  admin_username               = var.admin_username
+  admin_password               = var.admin_password
+  zones                        = var.zones
+  node_role                    = "frontend"
+  bootstrap_repo_owner         = var.bootstrap_repo_owner
+  bootstrap_repo_branch        = var.bootstrap_repo_branch
+  bootstrap_app_env            = var.environment == "prod" ? "production" : var.environment
+  bootstrap_public_base_url    = "http://${module.app_gateway.public_ip_address}"
+  bootstrap_data_vm_private_ip = var.data_private_ip
+  bootstrap_jwt_secret_key     = var.jwt_secret_key
+  associate_with_app_gateway   = true
+  app_gateway_backend_pool_id  = module.app_gateway.backend_pool_ids.frontend
+  tags                         = local.tags
 }
 
 module "backend_vms" {
   source = "./modules/linux-vm-group"
 
-  vm_names                    = local.backend_vm_names
-  resource_group_name         = module.resource_group.name
-  location                    = module.resource_group.location
-  subnet_id                   = module.network.subnet_ids["backend-subnet"]
-  vm_size                     = var.backend_vm_size
-  admin_username              = var.admin_username
-  admin_password              = var.admin_password
-  zones                       = var.zones
-  node_role                   = "backend"
-  associate_with_app_gateway  = true
-  app_gateway_backend_pool_id = module.app_gateway.backend_pool_ids.api
-  tags                        = local.tags
+  vm_names                     = local.backend_vm_names
+  resource_group_name          = module.resource_group.name
+  location                     = module.resource_group.location
+  subnet_id                    = module.network.subnet_ids["backend-subnet"]
+  private_ip_addresses         = [var.backend_private_ip]
+  vm_size                      = var.backend_vm_size
+  admin_username               = var.admin_username
+  admin_password               = var.admin_password
+  zones                        = var.zones
+  node_role                    = "backend"
+  bootstrap_repo_owner         = var.bootstrap_repo_owner
+  bootstrap_repo_branch        = var.bootstrap_repo_branch
+  bootstrap_app_env            = var.environment == "prod" ? "production" : var.environment
+  bootstrap_public_base_url    = "http://${module.app_gateway.public_ip_address}"
+  bootstrap_data_vm_private_ip = var.data_private_ip
+  bootstrap_jwt_secret_key     = var.jwt_secret_key
+  postgres_db                  = var.postgres_database_name
+  postgres_user                = var.postgres_app_username
+  postgres_password            = var.postgres_app_password
+  postgres_port                = var.postgres_port
+  ollama_model                 = var.ollama_model
+  ollama_port                  = var.ollama_port
+  associate_with_app_gateway   = true
+  app_gateway_backend_pool_id  = module.app_gateway.backend_pool_ids.api
+  tags                         = local.tags
 }
 
 module "data_vms" {
   source = "./modules/linux-vm-group"
 
-  vm_names            = local.data_vm_names
-  resource_group_name = module.resource_group.name
-  location            = module.resource_group.location
-  subnet_id           = module.network.subnet_ids["db-subnet"]
-  vm_size             = var.data_vm_size
-  admin_username      = var.admin_username
-  admin_password      = var.admin_password
-  zones               = var.zones
-  node_role           = "data-ai"
-  postgres_enabled    = true
-  postgres_image      = var.postgres_container_image
-  postgres_db         = var.postgres_database_name
-  postgres_user       = var.postgres_app_username
-  postgres_password   = var.postgres_app_password
-  postgres_port       = var.postgres_port
-  ollama_enabled      = true
-  ollama_image        = var.ollama_container_image
-  ollama_model        = var.ollama_model
-  ollama_port         = var.ollama_port
-  tags                = local.tags
+  vm_names                     = local.data_vm_names
+  resource_group_name          = module.resource_group.name
+  location                     = module.resource_group.location
+  subnet_id                    = module.network.subnet_ids["db-subnet"]
+  private_ip_addresses         = [var.data_private_ip]
+  vm_size                      = var.data_vm_size
+  admin_username               = var.admin_username
+  admin_password               = var.admin_password
+  zones                        = var.zones
+  node_role                    = "data-ai"
+  postgres_enabled             = true
+  postgres_image               = var.postgres_container_image
+  postgres_db                  = var.postgres_database_name
+  postgres_user                = var.postgres_app_username
+  postgres_password            = var.postgres_app_password
+  postgres_port                = var.postgres_port
+  ollama_enabled               = true
+  ollama_image                 = var.ollama_container_image
+  ollama_model                 = var.ollama_model
+  ollama_port                  = var.ollama_port
+  bootstrap_repo_owner         = var.bootstrap_repo_owner
+  bootstrap_repo_branch        = var.bootstrap_repo_branch
+  bootstrap_app_env            = var.environment == "prod" ? "production" : var.environment
+  bootstrap_public_base_url    = "http://${module.app_gateway.public_ip_address}"
+  bootstrap_data_vm_private_ip = var.data_private_ip
+  bootstrap_jwt_secret_key     = var.jwt_secret_key
+  tags                         = local.tags
 }

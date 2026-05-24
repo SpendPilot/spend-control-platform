@@ -14,6 +14,11 @@ variable "subnet_id" {
   type = string
 }
 
+variable "private_ip_addresses" {
+  type    = list(string)
+  default = []
+}
+
 variable "vm_size" {
   type = string
 }
@@ -85,6 +90,37 @@ variable "ollama_model" {
 variable "ollama_port" {
   type    = number
   default = 11434
+}
+
+variable "bootstrap_repo_owner" {
+  type    = string
+  default = "SpendPilot"
+}
+
+variable "bootstrap_repo_branch" {
+  type    = string
+  default = "main"
+}
+
+variable "bootstrap_app_env" {
+  type    = string
+  default = "production"
+}
+
+variable "bootstrap_public_base_url" {
+  type    = string
+  default = ""
+}
+
+variable "bootstrap_data_vm_private_ip" {
+  type    = string
+  default = ""
+}
+
+variable "bootstrap_jwt_secret_key" {
+  type      = string
+  sensitive = true
+  default   = "dev-secret-change-me"
 }
 
 variable "associate_with_app_gateway" {

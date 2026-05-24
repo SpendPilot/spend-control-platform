@@ -8,7 +8,8 @@ resource "azurerm_network_interface" "this" {
   ip_configuration {
     name                          = "internal"
     subnet_id                     = var.subnet_id
-    private_ip_address_allocation = "Dynamic"
+    private_ip_address_allocation = length(var.private_ip_addresses) > count.index ? "Static" : "Dynamic"
+    private_ip_address            = length(var.private_ip_addresses) > count.index ? var.private_ip_addresses[count.index] : null
   }
 }
 
@@ -42,17 +43,23 @@ resource "azurerm_linux_virtual_machine" "this" {
   }
 
   custom_data = base64encode(templatefile("${path.module}/templates/install-docker.tftpl", {
-    node_role         = var.node_role
-    postgres_enabled  = var.postgres_enabled
-    postgres_image    = var.postgres_image
-    postgres_db       = var.postgres_db
-    postgres_user     = var.postgres_user
-    postgres_password = var.postgres_password
-    postgres_port     = var.postgres_port
-    ollama_enabled    = var.ollama_enabled
-    ollama_image      = var.ollama_image
-    ollama_model      = var.ollama_model
-    ollama_port       = var.ollama_port
+    node_role                    = var.node_role
+    postgres_enabled             = var.postgres_enabled
+    postgres_image               = var.postgres_image
+    postgres_db                  = var.postgres_db
+    postgres_user                = var.postgres_user
+    postgres_password            = var.postgres_password
+    postgres_port                = var.postgres_port
+    ollama_enabled               = var.ollama_enabled
+    ollama_image                 = var.ollama_image
+    ollama_model                 = var.ollama_model
+    ollama_port                  = var.ollama_port
+    bootstrap_repo_owner         = var.bootstrap_repo_owner
+    bootstrap_repo_branch        = var.bootstrap_repo_branch
+    bootstrap_app_env            = var.bootstrap_app_env
+    bootstrap_public_base_url    = var.bootstrap_public_base_url
+    bootstrap_data_vm_private_ip = var.bootstrap_data_vm_private_ip
+    bootstrap_jwt_secret_key     = var.bootstrap_jwt_secret_key
   }))
 }
 
