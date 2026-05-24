@@ -19,11 +19,11 @@ fi
 
 # Define repository information
 declare -a REPOSITORIES=(
-    "spend-control-platform:https://github.com/your-org/spend-control-platform.git"
-    "spend-control-ai-service:https://github.com/your-org/spend-control-ai-service.git"
-    "spend-control-control-service:https://github.com/your-org/spend-control-control-service.git"
-    "spend-control-expense-service:https://github.com/your-org/spend-control-expense-service.git"
-    "spend-control-frontend:https://github.com/your-org/spend-control-frontend.git"
+    "spend-control-platform:https://github.com/SpendPilot/spend-control-platform.git"
+    "spend-control-ai-service:https://github.com/SpendPilot/spend-control-ai-service.git"
+    "spend-control-control-service:https://github.com/SpendPilot/spend-control-control-service.git"
+    "spend-control-expense-service:https://github.com/SpendPilot/spend-control-expense-service.git"
+    "spend-control-frontend:https://github.com/SpendPilot/spend-control-frontend.git"
 )
 
 # Create base directory if it doesn't exist
