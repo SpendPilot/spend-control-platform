@@ -1,9 +1,14 @@
 # Spend Control Platform - Clone All Repositories Script
 # This script clones all required repositories for the Spend Control platform
+# 
+# Run from spend-control-platform directory:
+#   .\clone-all-repos.ps1
+#
+# This will clone all repos into the same directory as spend-control-platform
 
 param(
-    [Parameter(HelpMessage="Base directory to clone repositories into")]
-    [string]$BaseDir = $(Get-Location)
+    [Parameter(HelpMessage="Base directory to clone repositories into (defaults to parent directory)")]
+    [string]$BaseDir = $(Split-Path -Parent (Split-Path -Parent $PSCommandPath))
 )
 
 # Define repository information

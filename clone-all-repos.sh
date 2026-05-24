@@ -2,8 +2,20 @@
 
 # Spend Control Platform - Clone All Repositories Script
 # This script clones all required repositories for the Spend Control platform
+#
+# Run from spend-control-platform directory:
+#   ./clone-all-repos.sh
+#
+# This will clone all repos into the same directory as spend-control-platform
 
+# Get the directory where this script is located (platform directory)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Default to parent directory (where platform repo is)
 BASE_DIR="${1:-.}"
+if [ "$BASE_DIR" = "." ]; then
+    BASE_DIR="$(dirname "$SCRIPT_DIR")"
+fi
 
 # Define repository information
 declare -a REPOSITORIES=(
