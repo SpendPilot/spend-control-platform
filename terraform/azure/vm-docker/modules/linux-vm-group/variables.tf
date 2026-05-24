@@ -89,7 +89,7 @@ variable "ollama_port" {
 
 variable "app_gateway_backend_pool_id" {
   type    = string
-  default = null
+  default = ""
 }
 
 variable "acr_id" {
