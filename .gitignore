@@ -1,4 +1,5 @@
 .env
+.env.azure-vm.backend
 .terraform/
 *.tfstate
 *.tfstate.*

@@ -134,11 +134,6 @@ variable "zones" {
   default = ["1", "2", "3"]
 }
 
-variable "acr_sku" {
-  type    = string
-  default = "Premium"
-}
-
 variable "app_gateway_min_capacity" {
   type    = number
   default = 2

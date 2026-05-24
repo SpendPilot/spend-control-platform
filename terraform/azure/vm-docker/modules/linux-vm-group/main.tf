@@ -57,15 +57,8 @@ resource "azurerm_linux_virtual_machine" "this" {
 }
 
 resource "azurerm_network_interface_application_gateway_backend_address_pool_association" "this" {
-  count                   = var.app_gateway_backend_pool_id != "" ? length(var.vm_names) : 0
+  count                   = var.associate_with_app_gateway ? length(var.vm_names) : 0
   network_interface_id    = azurerm_network_interface.this[count.index].id
   ip_configuration_name   = "internal"
   backend_address_pool_id = var.app_gateway_backend_pool_id
-}
-
-resource "azurerm_role_assignment" "acr_pull" {
-  count                = length(var.vm_names)
-  scope                = var.acr_id
-  role_definition_name = "AcrPull"
-  principal_id         = azurerm_linux_virtual_machine.this[count.index].identity[0].principal_id
 }

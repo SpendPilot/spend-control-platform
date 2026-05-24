@@ -33,7 +33,7 @@ services:
       dockerfile: Dockerfile
     environment:
       APP_ENV: development
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}}
       CORS_ORIGINS: http://localhost:3000
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
       UPLOAD_DIR: /data/uploads
@@ -56,11 +56,11 @@ services:
       dockerfile: Dockerfile
     environment:
       APP_ENV: development
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}}
       CORS_ORIGINS: http://localhost:3000
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
-      OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
     depends_on:
       postgres:
         condition: service_healthy
@@ -80,7 +80,7 @@ services:
       dockerfile: Dockerfile
     environment:
       APP_ENV: development
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}}
       CORS_ORIGINS: http://localhost:3000
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
       EXPENSE_SERVICE_URL: http://expense-service:8001
@@ -107,7 +107,7 @@ services:
       dockerfile: Dockerfile
     environment:
       APP_ENV: development
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
     depends_on:
       control-service:

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   expense-service:
     build:
@@ -8,7 +6,7 @@ services:
     container_name: spend-control-expense-service
     environment:
       APP_ENV: ${APP_ENV:-development}
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
       UPLOAD_DIR: /data/uploads
@@ -32,11 +30,11 @@ services:
     container_name: spend-control-ai-service
     environment:
       APP_ENV: ${APP_ENV:-development}
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:8b}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
       OLLAMA_REQUEST_TIMEOUT: ${OLLAMA_REQUEST_TIMEOUT:-30}
     ports:
       - "8002:8002"
@@ -56,7 +54,7 @@ services:
     container_name: spend-control-control-service
     environment:
       APP_ENV: ${APP_ENV:-development}
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
       EXPENSE_SERVICE_URL: ${EXPENSE_SERVICE_URL:-http://expense-service:8001}
@@ -81,4 +79,5 @@ volumes:
 
 networks:
   spend-control-network:
+    name: spend-control-network
     driver: bridge

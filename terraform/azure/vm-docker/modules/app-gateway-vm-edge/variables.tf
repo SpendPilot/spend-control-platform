@@ -37,6 +37,16 @@ variable "api_backend_port" {
   default = 8000
 }
 
+variable "waf_mode" {
+  type    = string
+  default = "Prevention"
+}
+
+variable "waf_rule_set_version" {
+  type    = string
+  default = "3.2"
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

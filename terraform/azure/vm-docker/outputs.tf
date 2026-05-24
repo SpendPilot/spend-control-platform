@@ -14,14 +14,22 @@ output "frontend_vm_names" {
   value = module.frontend_vms.vm_names
 }
 
+output "frontend_vm_private_ips" {
+  value = module.frontend_vms.private_ip_addresses
+}
+
 output "backend_vm_names" {
   value = module.backend_vms.vm_names
+}
+
+output "backend_vm_private_ips" {
+  value = module.backend_vms.private_ip_addresses
 }
 
 output "data_vm_names" {
   value = module.data_vms.vm_names
 }
 
-output "acr_login_server" {
-  value = module.container_registry.login_server
+output "data_vm_private_ips" {
+  value = module.data_vms.private_ip_addresses
 }

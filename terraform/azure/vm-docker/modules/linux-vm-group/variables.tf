@@ -87,13 +87,14 @@ variable "ollama_port" {
   default = 11434
 }
 
+variable "associate_with_app_gateway" {
+  type    = bool
+  default = false
+}
+
 variable "app_gateway_backend_pool_id" {
   type    = string
   default = ""
-}
-
-variable "acr_id" {
-  type = string
 }
 
 variable "tags" {

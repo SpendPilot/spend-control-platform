@@ -15,16 +15,6 @@ module "log_analytics" {
   tags                = local.tags
 }
 
-module "container_registry" {
-  source = "./modules/container-registry"
-
-  name                = replace(substr("${local.name}acr001", 0, 50), "-", "")
-  location            = module.resource_group.location
-  resource_group_name = module.resource_group.name
-  sku                 = var.acr_sku
-  tags                = local.tags
-}
-
 module "network" {
   source = "./modules/network"
 
@@ -202,8 +192,8 @@ module "frontend_vms" {
   admin_password              = var.admin_password
   zones                       = var.zones
   node_role                   = "frontend"
+  associate_with_app_gateway  = true
   app_gateway_backend_pool_id = module.app_gateway.backend_pool_ids.frontend
-  acr_id                      = module.container_registry.id
   tags                        = local.tags
 }
 
@@ -219,8 +209,8 @@ module "backend_vms" {
   admin_password              = var.admin_password
   zones                       = var.zones
   node_role                   = "backend"
+  associate_with_app_gateway  = true
   app_gateway_backend_pool_id = module.app_gateway.backend_pool_ids.api
-  acr_id                      = module.container_registry.id
   tags                        = local.tags
 }
 
@@ -236,7 +226,6 @@ module "data_vms" {
   admin_password      = var.admin_password
   zones               = var.zones
   node_role           = "data-ai"
-  acr_id              = module.container_registry.id
   postgres_enabled    = true
   postgres_image      = var.postgres_container_image
   postgres_db         = var.postgres_database_name

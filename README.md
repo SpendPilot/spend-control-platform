@@ -54,6 +54,14 @@ cd spend-control-platform
 docker compose -f docker-compose.backend.yml up --build
 ```
 
+For Azure VM mode on the backend VM, use the Azure-specific env file:
+
+```powershell
+Copy-Item .env.azure-vm.backend.example .env.azure-vm.backend
+# Replace <DATA_VM_PRIVATE_IP> and secrets first
+docker compose --env-file .env.azure-vm.backend -f docker-compose.backend.yml up --build -d
+```
+
 ### 3. Frontend
 
 In another terminal:
@@ -76,6 +84,7 @@ All services use environment variables defined in `.env` for configuration, incl
 - API endpoints and CORS origins
 - JWT secrets
 - Ollama model configuration
+- Frontend API URL via `NEXT_PUBLIC_API_BASE_URL`
 
 ## Kubernetes
 
@@ -136,8 +145,13 @@ What the VM path provisions:
 - one frontend VM
 - one backend VM
 - one data VM for PostgreSQL and Ollama
-- Azure Container Registry
 - Docker-ready cloud-init on the VMs
+
+Important for VM mode:
+
+- `postgres` and `ollama` are Docker-local hostnames used only by the local Compose setup
+- in Azure VM mode, the backend VM must connect to the data VM over the VNet using the data VM private IP or private DNS name
+- Terraform now outputs `data_vm_private_ips` to make that wiring easier
 
 Module structure:
 

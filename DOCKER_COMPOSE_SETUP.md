@@ -36,6 +36,7 @@ The Spend Control Platform has been restructured from a single monolithic `docke
      - Automatic database migrations on startup
      - Service-to-service communication via container names
      - Health checks for service availability
+     - Full `DATABASE_URL` override support for Azure VM deployments
 
 ### 3. **docker-compose.frontend.yml**
    - **Purpose**: Frontend application (Next.js)
@@ -132,7 +133,7 @@ POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
 - Service interconnect URLs
 
 # Frontend inherits:
-- Backend API URL (NEXT_PUBLIC_API_URL)
+- Backend API URL (`NEXT_PUBLIC_API_BASE_URL`)
 ```
 
 ## Startup Sequence
@@ -153,6 +154,14 @@ docker compose -f docker-compose.backend.yml up --build
 # 1. Wait for postgres connectivity
 # 2. Run migrations
 # 3. Start FastAPI servers
+```
+
+### Azure VM Backend Variant
+```powershell
+cd spend-control-platform
+Copy-Item .env.azure-vm.backend.example .env.azure-vm.backend
+# Replace <DATA_VM_PRIVATE_IP> and secrets
+docker compose --env-file .env.azure-vm.backend -f docker-compose.backend.yml up --build -d
 ```
 
 ### Terminal 3 - Frontend

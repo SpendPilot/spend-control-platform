@@ -74,8 +74,15 @@ This keeps `expense-service`, `ai-service`, and PostgreSQL private while preserv
 - One frontend Linux VM
 - One backend Linux VM
 - One data Linux VM for PostgreSQL and Ollama
-- Azure Container Registry
 - Log Analytics workspace
+
+Important networking note:
+
+- the frontend, backend, and data VMs are on different subnets, but they are still inside the same VNet
+- Azure routes traffic between those subnets by default unless NSGs block it
+- this Terraform allows backend-subnet to reach db-subnet on PostgreSQL and Ollama ports
+- the hostname `postgres` only works in the local Docker Compose network, not across Azure VMs
+- in VM mode, the backend workloads must use the data VM private IP or a private DNS name
 
 ## Production Suggestions
 
@@ -108,7 +115,6 @@ Both Terraform roots create the core Azure foundation:
 - networking
 - data tier hosting model appropriate to the selected deployment type
 - observability workspace
-- container registry
 - edge ingress resources
 - compute layer for the selected deployment model
 

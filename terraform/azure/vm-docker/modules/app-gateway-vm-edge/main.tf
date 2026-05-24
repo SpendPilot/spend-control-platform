@@ -8,12 +8,35 @@ resource "azurerm_public_ip" "this" {
   tags                = var.tags
 }
 
+resource "azurerm_web_application_firewall_policy" "this" {
+  name                = "${var.name}-waf"
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  tags                = var.tags
+
+  policy_settings {
+    enabled                     = true
+    mode                        = var.waf_mode
+    request_body_check          = true
+    file_upload_limit_in_mb     = 100
+    max_request_body_size_in_kb = 128
+  }
+
+  managed_rules {
+    managed_rule_set {
+      type    = "OWASP"
+      version = var.waf_rule_set_version
+    }
+  }
+}
+
 resource "azurerm_application_gateway" "this" {
   name                = var.name
   resource_group_name = var.resource_group_name
   location            = var.location
   zones               = var.zones
   tags                = var.tags
+  firewall_policy_id  = azurerm_web_application_firewall_policy.this.id
 
   sku {
     name = "WAF_v2"
@@ -124,12 +147,5 @@ resource "azurerm_application_gateway" "this" {
     http_listener_name = "http-listener"
     url_path_map_name  = "spendpilot-path-map"
     priority           = 100
-  }
-
-  waf_configuration {
-    enabled          = true
-    firewall_mode    = "Prevention"
-    rule_set_type    = "OWASP"
-    rule_set_version = "3.2"
   }
 }
