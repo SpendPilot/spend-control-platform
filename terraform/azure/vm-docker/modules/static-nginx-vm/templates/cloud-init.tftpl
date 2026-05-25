@@ -8,7 +8,7 @@ runcmd:
   - mkdir -p /var/www/html
   - |
     cat > /var/www/html/index.html <<'EOF'
-${html_content}
+${indent(4, html_content)}
     EOF
   - |
     cat > /etc/nginx/sites-available/default <<'EOF'
