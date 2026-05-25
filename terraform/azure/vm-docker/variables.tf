@@ -51,6 +51,12 @@ variable "appgw_subnet_cidr" {
   default = "10.60.0.0/24"
 }
 
+variable "bastion_subnet_cidr" {
+  description = "Dedicated Azure Bastion subnet. Azure requires the subnet name AzureBastionSubnet and at least a /26 range."
+  type        = string
+  default     = "10.60.1.0/26"
+}
+
 variable "frontend_subnet_cidr" {
   type    = string
   default = "10.60.10.0/24"
@@ -75,6 +81,12 @@ variable "ollama_lb_private_ip" {
   description = "Static private IP exposed by the internal load balancer in front of the data-ai VM scale set."
   type        = string
   default     = "10.60.30.10"
+}
+
+variable "nat_gateway_idle_timeout_in_minutes" {
+  description = "Idle timeout applied to the shared NAT gateway used by the VM scale set subnets."
+  type        = number
+  default     = 10
 }
 
 variable "frontend_vm_size" {

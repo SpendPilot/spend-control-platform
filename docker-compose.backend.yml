@@ -88,8 +88,6 @@ services:
         condition: service_healthy
       expense-service:
         condition: service_healthy
-      ai-service:
-        condition: service_healthy
     command: ["python", "/app/scripts/seed_demo.py"]
     networks:
       - spend-control-network

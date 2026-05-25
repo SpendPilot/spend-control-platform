@@ -10,6 +10,10 @@ output "application_gateway_id" {
   value = module.app_gateway.id
 }
 
+output "nat_gateway_public_ip" {
+  value = azurerm_public_ip.nat_gateway.ip_address
+}
+
 output "frontend_scale_set_name" {
   value = module.frontend_vmss.name
 }

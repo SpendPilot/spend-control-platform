@@ -15,6 +15,63 @@ write_files:
     owner: root:root
     content: |
       ${node_role}
+  - path: /opt/spend-control/bootstrap/common.sh
+    permissions: "0755"
+    owner: root:root
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      retry() {
+        local attempts="$1"
+        shift
+        local delay="$1"
+        shift
+
+        local i=1
+        while true; do
+          if "$@"; then
+            return 0
+          fi
+          if [ "$i" -ge "$attempts" ]; then
+            echo "Command failed after $attempts attempts: $*"
+            return 1
+          fi
+          echo "Command failed (attempt $i/$attempts): $*"
+          sleep "$delay"
+          i=$((i + 1))
+        done
+      }
+
+      install_docker_stack() {
+        export DEBIAN_FRONTEND=noninteractive
+        install -m 0755 -d /etc/apt/keyrings
+        retry 5 10 curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /tmp/docker.asc
+        chmod a+r /tmp/docker.asc
+        gpg --dearmor -o /etc/apt/keyrings/docker.gpg /tmp/docker.asc
+        chmod a+r /etc/apt/keyrings/docker.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list
+        retry 5 15 apt-get update
+        retry 5 15 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+        systemctl enable docker
+        systemctl restart docker
+        usermod -aG docker ubuntu || true
+        usermod -aG docker azureuser || true
+        usermod -aG docker ${admin_username} || true
+        command -v docker >/dev/null 2>&1
+      }
+
+      wait_for_docker() {
+        for i in $(seq 1 60); do
+          if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+            return 0
+          fi
+          echo "Waiting for Docker daemon ($i/60)..."
+          sleep 5
+        done
+        echo "Docker daemon did not become ready in time."
+        return 1
+      }
 %{ if ollama_enabled }
   - path: /opt/spend-control/data-ai/docker-compose.yml
     permissions: "0644"
@@ -44,19 +101,9 @@ write_files:
     content: |
       #!/usr/bin/env bash
       set -euxo pipefail
+      source /opt/spend-control/bootstrap/common.sh
       base=/opt/spend-control/deploy
       mkdir -p "$base"
-
-      wait_for_docker() {
-        for i in $(seq 1 30); do
-          if docker info >/dev/null 2>&1; then
-            return 0
-          fi
-          sleep 2
-        done
-        echo "Docker daemon did not become ready in time."
-        return 1
-      }
 
       clone_or_update() {
         repo="$1"
@@ -69,6 +116,7 @@ write_files:
         fi
       }
 
+      install_docker_stack
       wait_for_docker
       clone_or_update spend-control-platform "$base/spend-control-platform"
       clone_or_update spend-control-frontend "$base/spend-control-frontend"
@@ -99,19 +147,9 @@ write_files:
     content: |
       #!/usr/bin/env bash
       set -euxo pipefail
+      source /opt/spend-control/bootstrap/common.sh
       base=/opt/spend-control/deploy
       mkdir -p "$base"
-
-      wait_for_docker() {
-        for i in $(seq 1 30); do
-          if docker info >/dev/null 2>&1; then
-            return 0
-          fi
-          sleep 2
-        done
-        echo "Docker daemon did not become ready in time."
-        return 1
-      }
 
       wait_for_tcp() {
         host="$1"
@@ -132,7 +170,7 @@ write_files:
         url="$1"
         label="$2"
         for i in $(seq 1 60); do
-          if curl -fsS "$url" >/dev/null 2>&1; then
+          if curl --connect-timeout 2 --max-time 5 -fsS "$url" >/dev/null 2>&1; then
             return 0
           fi
           echo "Waiting for $label at $url ($i/60)..."
@@ -153,9 +191,12 @@ write_files:
         fi
       }
 
+      install_docker_stack
       wait_for_docker
       wait_for_tcp ${bootstrap_database_host} ${bootstrap_database_port} "PostgreSQL"
-      wait_for_http ${bootstrap_ollama_base_url}/api/tags "Ollama"
+      if ! wait_for_http ${bootstrap_ollama_base_url}/api/tags "Ollama"; then
+        echo "Ollama is not ready yet. Continuing backend startup without blocking on it."
+      fi
 
       clone_or_update spend-control-platform "$base/spend-control-platform"
       clone_or_update spend-control-control-service "$base/spend-control-control-service"
@@ -165,27 +206,40 @@ write_files:
       cd "$base/spend-control-platform"
       docker compose --env-file /opt/spend-control/bootstrap/backend.env -f docker-compose.backend.yml up -d --build
 %{ endif }
+%{ if ollama_enabled }
+  - path: /opt/spend-control/bootstrap/start-data-ai.sh
+    permissions: "0755"
+    owner: root:root
+    content: |
+      #!/usr/bin/env bash
+      set -euxo pipefail
+      source /opt/spend-control/bootstrap/common.sh
+
+      install_docker_stack
+      wait_for_docker
+
+      mkdir -p /opt/spend-control/data-ai
+      mkdir -p /var/lib/spend-control/ollama
+      docker compose -f /opt/spend-control/data-ai/docker-compose.yml up -d
+
+      for i in $(seq 1 60); do
+        if curl -fsS http://127.0.0.1:${ollama_port}/api/tags >/dev/null 2>&1; then
+          break
+        fi
+        echo "Waiting for local Ollama API (attempt $i/60)..."
+        sleep 5
+      done
+
+      curl -fsS http://127.0.0.1:${ollama_port}/api/tags >/dev/null
+      docker exec spend-control-ollama ollama pull ${ollama_model}
+%{ endif }
 
 runcmd:
-  - install -m 0755 -d /etc/apt/keyrings
-  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /tmp/docker.asc
-  - chmod a+r /tmp/docker.asc
-  - gpg --dearmor -o /etc/apt/keyrings/docker.gpg /tmp/docker.asc
-  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list
-  - apt-get update
-  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-  - systemctl enable docker
-  - systemctl start docker
-  - usermod -aG docker ubuntu || true
-  - usermod -aG docker azureuser || true
   - mkdir -p /opt/spend-control
+  - mkdir -p /opt/spend-control/bootstrap
   - echo "Docker ready for ${node_role} node" > /opt/spend-control/README.txt
 %{ if ollama_enabled }
-  - mkdir -p /opt/spend-control/data-ai
-  - mkdir -p /var/lib/spend-control/ollama
-  - docker compose -f /opt/spend-control/data-ai/docker-compose.yml up -d
-  - bash -lc 'for i in $(seq 1 30); do curl -fsS http://127.0.0.1:${ollama_port}/api/tags >/dev/null && break; sleep 5; done'
-  - docker exec spend-control-ollama ollama pull ${ollama_model}
+  - bash /opt/spend-control/bootstrap/start-data-ai.sh
 %{ endif }
 %{ if node_role == "frontend" }
   - bash /opt/spend-control/bootstrap/start-frontend.sh

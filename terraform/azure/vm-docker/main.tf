@@ -28,6 +28,9 @@ module "network" {
     "appgw-subnet" = {
       address_prefixes = [var.appgw_subnet_cidr]
     }
+    "AzureBastionSubnet" = {
+      address_prefixes = [var.bastion_subnet_cidr]
+    }
     "frontend-subnet" = {
       address_prefixes = [var.frontend_subnet_cidr]
     }
@@ -64,6 +67,17 @@ module "frontend_subnet_nsg" {
         source_port_range          = "*"
         destination_port_range     = "3000"
         source_address_prefix      = var.appgw_subnet_cidr
+        destination_address_prefix = "*"
+      },
+      {
+        name                       = "allow-bastion-to-frontend-ssh"
+        priority                   = 110
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "22"
+        source_address_prefix      = var.bastion_subnet_cidr
         destination_address_prefix = "*"
       }
     ],
@@ -104,6 +118,17 @@ module "backend_subnet_nsg" {
         destination_port_range     = "8000"
         source_address_prefix      = var.appgw_subnet_cidr
         destination_address_prefix = "*"
+      },
+      {
+        name                       = "allow-bastion-to-backend-ssh"
+        priority                   = 110
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "22"
+        source_address_prefix      = var.bastion_subnet_cidr
+        destination_address_prefix = "*"
       }
     ],
     length(var.admin_allowed_cidrs) == 0 ? [] : [
@@ -143,6 +168,17 @@ module "data_ai_subnet_nsg" {
         destination_port_range     = tostring(var.ollama_port)
         source_address_prefix      = var.backend_subnet_cidr
         destination_address_prefix = "*"
+      },
+      {
+        name                       = "allow-bastion-to-data-ai-ssh"
+        priority                   = 110
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "22"
+        source_address_prefix      = var.bastion_subnet_cidr
+        destination_address_prefix = "*"
       }
     ],
     length(var.admin_allowed_cidrs) == 0 ? [] : [
@@ -171,6 +207,44 @@ module "app_gateway" {
   min_capacity        = var.app_gateway_min_capacity
   max_capacity        = var.app_gateway_max_capacity
   tags                = local.tags
+}
+
+resource "azurerm_public_ip" "nat_gateway" {
+  name                = "${local.name}-nat-pip"
+  location            = module.resource_group.location
+  resource_group_name = module.resource_group.name
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  tags                = local.tags
+}
+
+resource "azurerm_nat_gateway" "this" {
+  name                    = "${local.name}-nat"
+  location                = module.resource_group.location
+  resource_group_name     = module.resource_group.name
+  sku_name                = "Standard"
+  idle_timeout_in_minutes = var.nat_gateway_idle_timeout_in_minutes
+  tags                    = local.tags
+}
+
+resource "azurerm_nat_gateway_public_ip_association" "this" {
+  nat_gateway_id       = azurerm_nat_gateway.this.id
+  public_ip_address_id = azurerm_public_ip.nat_gateway.id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "frontend" {
+  subnet_id      = module.network.subnet_ids["frontend-subnet"]
+  nat_gateway_id = azurerm_nat_gateway.this.id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "backend" {
+  subnet_id      = module.network.subnet_ids["backend-subnet"]
+  nat_gateway_id = azurerm_nat_gateway.this.id
+}
+
+resource "azurerm_subnet_nat_gateway_association" "data_ai" {
+  subnet_id      = module.network.subnet_ids["data-ai-subnet"]
+  nat_gateway_id = azurerm_nat_gateway.this.id
 }
 
 module "postgres" {

@@ -45,6 +45,7 @@ resource "azurerm_linux_virtual_machine_scale_set" "this" {
   }
 
   custom_data = base64encode(templatefile("${path.module}/templates/install-docker.tftpl", {
+    admin_username                = var.admin_username
     node_role                     = var.node_role
     ollama_enabled                = var.ollama_enabled
     ollama_image                  = var.ollama_image

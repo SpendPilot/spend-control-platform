@@ -14,11 +14,13 @@ admin_allowed_cidrs       = ["203.0.113.10/32"]
 
 vnet_cidr                 = "10.60.0.0/16"
 appgw_subnet_cidr         = "10.60.0.0/24"
+bastion_subnet_cidr       = "10.60.1.0/26"
 frontend_subnet_cidr      = "10.60.10.0/24"
 backend_subnet_cidr       = "10.60.20.0/24"
 data_ai_subnet_cidr       = "10.60.30.0/24"
 postgres_subnet_cidr      = "10.60.40.0/24"
 ollama_lb_private_ip      = "10.60.30.10"
+nat_gateway_idle_timeout_in_minutes = 10
 
 zones                     = ["1", "2", "3"]
 
