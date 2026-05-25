@@ -57,7 +57,7 @@ write_files:
     owner: root:root
     content: |
       NODE_ENV=${bootstrap_app_env}
-      NEXT_PUBLIC_API_BASE_URL=${bootstrap_public_base_url}
+      NEXT_PUBLIC_API_BASE_URL=
 
   - path: /opt/spend-control/bootstrap/start-frontend.sh
     permissions: "0755"

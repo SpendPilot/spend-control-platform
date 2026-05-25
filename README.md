@@ -139,6 +139,19 @@ terraform plan
 terraform apply
 ```
 
+To force all three VMs to rebuild and re-run cloud-init bootstrap with the latest repo code:
+
+```powershell
+cd c:\Users\lijaz\Desktop\PROJECT2\spend-control-platform
+.\scripts\rebootstrap_vm_docker_vms.ps1
+```
+
+Plan-only mode:
+
+```powershell
+.\scripts\rebootstrap_vm_docker_vms.ps1 -PlanOnly
+```
+
 What the VM path provisions:
 
 - public Azure Application Gateway WAF v2
