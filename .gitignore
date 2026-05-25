@@ -1,8 +1,5 @@
-.env
-.env.azure-vm.backend
-.env.azure-vm.frontend
+
 .terraform/
-*.tfstate
-*.tfstate.*
+
 crash.log
 !.terraform.lock.hcl
