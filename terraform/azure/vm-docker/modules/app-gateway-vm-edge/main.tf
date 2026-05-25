@@ -74,7 +74,6 @@ resource "azurerm_application_gateway" "this" {
   backend_http_settings {
     name                  = "frontend-http"
     cookie_based_affinity = "Disabled"
-    path                  = "/"
     port                  = var.frontend_backend_port
     protocol              = "Http"
     request_timeout       = 60
@@ -84,7 +83,6 @@ resource "azurerm_application_gateway" "this" {
   backend_http_settings {
     name                  = "api-http"
     cookie_based_affinity = "Disabled"
-    path                  = "/health"
     port                  = var.api_backend_port
     protocol              = "Http"
     request_timeout       = 60
