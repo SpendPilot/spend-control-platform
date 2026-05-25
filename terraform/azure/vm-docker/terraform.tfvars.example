@@ -48,8 +48,8 @@ postgres_sku_name         = "GP_Standard_D4ds_v5"
 postgres_storage_mb       = 131072
 postgres_backup_retention_days = 7
 postgres_zone             = "1"
-postgres_ha_mode          = "ZoneRedundant"
-postgres_ha_standby_zone  = "2"
+postgres_ha_mode          = "SameZone"
+postgres_ha_standby_zone  = "1"
 
 ollama_container_image    = "ollama/ollama:latest"
 ollama_model              = "llama3.2"
