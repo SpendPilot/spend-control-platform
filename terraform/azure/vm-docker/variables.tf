@@ -41,52 +41,71 @@ variable "admin_allowed_cidrs" {
   default     = []
 }
 
-variable "vnet_cidr" {
-  type    = string
-  default = "10.60.0.0/16"
+variable "edge_vnet_cidr" {
+  description = "Address space for the edge VNet that hosts ingress and admin-entry services."
+  type        = string
+  default     = "10.10.0.0/16"
+}
+
+variable "app_vnet_cidr" {
+  description = "Address space for the application VNet that hosts frontend and backend VM scale sets."
+  type        = string
+  default     = "10.11.0.0/16"
+}
+
+variable "data_vnet_cidr" {
+  description = "Address space for the data VNet that hosts PostgreSQL and Ollama/data services."
+  type        = string
+  default     = "10.12.0.0/16"
 }
 
 variable "appgw_subnet_cidr" {
   type    = string
-  default = "10.60.0.0/24"
+  default = "10.10.0.0/24"
 }
 
 variable "bastion_subnet_cidr" {
   description = "Dedicated Azure Bastion subnet. Azure requires the subnet name AzureBastionSubnet and at least a /26 range."
   type        = string
-  default     = "10.60.1.0/26"
+  default     = "10.10.1.0/24"
+}
+
+variable "firewall_subnet_cidr" {
+  description = "Dedicated Azure Firewall subnet in the hub VNet."
+  type        = string
+  default     = "10.10.2.0/24"
 }
 
 variable "frontend_subnet_cidr" {
   type    = string
-  default = "10.60.10.0/24"
+  default = "10.11.0.0/24"
 }
 
 variable "backend_subnet_cidr" {
   type    = string
-  default = "10.60.20.0/24"
+  default = "10.11.1.0/24"
+}
+
+variable "static_app_subnet_cidr" {
+  description = "Subnet for the host-routed static application VM."
+  type        = string
+  default     = "10.11.2.0/24"
 }
 
 variable "data_ai_subnet_cidr" {
   type    = string
-  default = "10.60.30.0/24"
+  default = "10.12.0.0/24"
 }
 
 variable "postgres_subnet_cidr" {
   type    = string
-  default = "10.60.40.0/24"
+  default = "10.12.1.0/24"
 }
 
 variable "ollama_lb_private_ip" {
   description = "Static private IP exposed by the internal load balancer in front of the data-ai VM scale set."
   type        = string
-  default     = "10.60.30.10"
-}
-
-variable "nat_gateway_idle_timeout_in_minutes" {
-  description = "Idle timeout applied to the shared NAT gateway used by the VM scale set subnets."
-  type        = number
-  default     = 10
+  default     = "10.12.0.10"
 }
 
 variable "frontend_vm_size" {
@@ -132,6 +151,12 @@ variable "data_ai_vmss_min_instances" {
 variable "data_ai_vmss_max_instances" {
   type    = number
   default = 2
+}
+
+variable "static_app_vm_size" {
+  description = "Size of the single VM that serves the host-routed static site."
+  type        = string
+  default     = "Standard_D2s_v3"
 }
 
 variable "postgres_database_name" {
@@ -219,6 +244,18 @@ variable "jwt_secret_key" {
   type      = string
   sensitive = true
   default   = "dev-secret-change-me"
+}
+
+variable "primary_host_name" {
+  description = "Primary host name served by the main spend-control frontend and API."
+  type        = string
+  default     = "myfinagent.online"
+}
+
+variable "static_app_host_name" {
+  description = "Host name routed to the demonstration static NGINX VM."
+  type        = string
+  default     = "app.myfinagent.online"
 }
 
 variable "zones" {

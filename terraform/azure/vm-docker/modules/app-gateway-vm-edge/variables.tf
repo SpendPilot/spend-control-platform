@@ -37,6 +37,20 @@ variable "api_backend_port" {
   default = 8000
 }
 
+variable "static_backend_port" {
+  type    = number
+  default = 80
+}
+
+variable "primary_host_name" {
+  type = string
+}
+
+variable "static_host_name" {
+  type    = string
+  default = ""
+}
+
 variable "waf_mode" {
   type    = string
   default = "Prevention"

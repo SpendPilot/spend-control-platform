@@ -18,8 +18,8 @@ variable "delegated_subnet_id" {
   type = string
 }
 
-variable "virtual_network_id" {
-  type = string
+variable "virtual_network_ids" {
+  type = list(string)
 }
 
 variable "private_dns_zone_name" {

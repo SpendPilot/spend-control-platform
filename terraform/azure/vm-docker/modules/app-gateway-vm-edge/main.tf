@@ -71,6 +71,10 @@ resource "azurerm_application_gateway" "this" {
     name = "api-pool"
   }
 
+  backend_address_pool {
+    name = "static-pool"
+  }
+
   backend_http_settings {
     name                  = "frontend-http"
     cookie_based_affinity = "Disabled"
@@ -87,6 +91,15 @@ resource "azurerm_application_gateway" "this" {
     protocol              = "Http"
     request_timeout       = 60
     probe_name            = "api-probe"
+  }
+
+  backend_http_settings {
+    name                  = "static-http"
+    cookie_based_affinity = "Disabled"
+    port                  = var.static_backend_port
+    protocol              = "Http"
+    request_timeout       = 60
+    probe_name            = "static-probe"
   }
 
   probe {
@@ -119,11 +132,35 @@ resource "azurerm_application_gateway" "this" {
     }
   }
 
+  probe {
+    name                                      = "static-probe"
+    protocol                                  = "Http"
+    path                                      = "/"
+    host                                      = "127.0.0.1"
+    interval                                  = 30
+    timeout                                   = 30
+    unhealthy_threshold                       = 3
+    pick_host_name_from_backend_http_settings = false
+
+    match {
+      status_code = ["200-399"]
+    }
+  }
+
   http_listener {
-    name                           = "http-listener"
+    name                           = "primary-http-listener"
     frontend_ip_configuration_name = "public-frontend"
     frontend_port_name             = "http"
     protocol                       = "Http"
+    host_name                      = var.primary_host_name
+  }
+
+  http_listener {
+    name                           = "static-http-listener"
+    frontend_ip_configuration_name = "public-frontend"
+    frontend_port_name             = "http"
+    protocol                       = "Http"
+    host_name                      = var.static_host_name
   }
 
   url_path_map {
@@ -140,10 +177,19 @@ resource "azurerm_application_gateway" "this" {
   }
 
   request_routing_rule {
-    name               = "path-routing-rule"
+    name               = "primary-path-routing-rule"
     rule_type          = "PathBasedRouting"
-    http_listener_name = "http-listener"
+    http_listener_name = "primary-http-listener"
     url_path_map_name  = "spendpilot-path-map"
     priority           = 100
+  }
+
+  request_routing_rule {
+    name                       = "static-host-routing-rule"
+    rule_type                  = "Basic"
+    http_listener_name         = "static-http-listener"
+    backend_address_pool_name  = "static-pool"
+    backend_http_settings_name = "static-http"
+    priority                   = 110
   }
 }

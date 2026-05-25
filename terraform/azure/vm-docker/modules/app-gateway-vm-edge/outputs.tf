@@ -20,5 +20,9 @@ output "backend_pool_ids" {
       for pool in azurerm_application_gateway.this.backend_address_pool : pool.id
       if pool.name == "api-pool"
     ])
+    static = one([
+      for pool in azurerm_application_gateway.this.backend_address_pool : pool.id
+      if pool.name == "static-pool"
+    ])
   }
 }
