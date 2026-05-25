@@ -14,9 +14,9 @@ if (-not (Test-Path $tfvarsPath)) {
 }
 
 $replaceTargets = @(
-    "module.frontend_vms.azurerm_linux_virtual_machine.this[0]",
-    "module.backend_vms.azurerm_linux_virtual_machine.this[0]",
-    "module.data_vms.azurerm_linux_virtual_machine.this[0]"
+    "module.frontend_vmss.azurerm_linux_virtual_machine_scale_set.this",
+    "module.backend_vmss.azurerm_linux_virtual_machine_scale_set.this",
+    "module.data_ai_vmss.azurerm_linux_virtual_machine_scale_set.this"
 )
 
 $replaceArgs = @()

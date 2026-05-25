@@ -74,6 +74,26 @@ services:
       - spend-control-network
     restart: unless-stopped
 
+  seed:
+    build:
+      context: ../spend-control-control-service
+      dockerfile: Dockerfile
+    container_name: spend-control-seed
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
+    depends_on:
+      control-service:
+        condition: service_healthy
+      expense-service:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    command: ["python", "/app/scripts/seed_demo.py"]
+    networks:
+      - spend-control-network
+
 volumes:
   uploads-data:
 

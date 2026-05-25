@@ -55,11 +55,11 @@ This will start:
 
 The services will automatically run database migrations on startup.
 
-For Azure VM mode on the backend VM:
+For Azure VMSS mode on the backend scale set:
 
 ```powershell
 Copy-Item .env.azure-vm.backend.example .env.azure-vm.backend
-# Replace <DATA_VM_PRIVATE_IP>, JWT secret, and DB password
+# Replace <POSTGRES_FQDN>, <OLLAMA_PRIVATE_LB_IP>, JWT secret, and DB password
 docker compose --env-file .env.azure-vm.backend -f docker-compose.backend.yml up --build -d
 ```
 
@@ -83,7 +83,7 @@ Copy-Item .env.example .env
 ```
 
 Key variables:
-- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`: Database credentials
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`: Local Docker Compose database credentials
 - `JWT_SECRET_KEY`: Change for production
 - `OLLAMA_MODEL`: LLM model to use
 - `CORS_ORIGINS`: Frontend URL for CORS
@@ -101,8 +101,8 @@ Key variables:
 - **ai-service**: Port 8002, depends on Ollama
 - **control-service**: Port 8000, orchestrates expense and AI services
 - Services connect to PostgreSQL at `postgres:5432`
-- In Azure VM mode, `DATABASE_URL` can override the default and point to the data VM private IP
-- In Azure VM mode, `OLLAMA_BASE_URL` should point to the data VM private IP
+- In Azure VMSS mode, `DATABASE_URL` should point to the PostgreSQL private FQDN
+- In Azure VMSS mode, `OLLAMA_BASE_URL` should point to the internal Ollama load balancer IP
 
 ### docker-compose.frontend.yml
 - **Next.js Frontend**: Port 3000
@@ -130,7 +130,7 @@ terraform plan
 terraform apply
 ```
 
-### Regular VM quick flow
+### Regular VMSS quick flow
 
 ```powershell
 cd c:\Users\lijaz\Desktop\PROJECT2\spend-control-platform\terraform\azure\vm-docker
@@ -140,17 +140,18 @@ terraform plan
 terraform apply
 ```
 
-After apply, use the data VM private IP for backend connectivity:
+After apply, use the PostgreSQL FQDN and Ollama load balancer IP for backend connectivity:
 
 ```powershell
-terraform output data_vm_private_ips
+terraform output postgres_fqdn
+terraform output ollama_private_load_balancer_ip
 ```
 
-In Azure VM mode:
+In Azure VMSS mode:
 
 - `postgres` is not a valid hostname across VMs
 - `ollama` is not a valid hostname across VMs
-- use the data VM private IP or a private DNS name in:
+- use the PostgreSQL private FQDN and the Ollama load balancer IP in:
   - `DATABASE_URL`
   - `OLLAMA_BASE_URL`
 
@@ -162,7 +163,7 @@ Use `vm-docker` if you want:
 
 - a simpler first Azure rollout
 - fewer moving parts than Kubernetes
-- fixed regular VMs instead of scale sets
+- VM scale sets instead of Kubernetes
 
 ## Resource groups
 

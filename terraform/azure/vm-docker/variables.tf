@@ -14,7 +14,7 @@ variable "location" {
 }
 
 variable "resource_group_name" {
-  description = "Single Azure resource group name used for this entire VM deployment stack."
+  description = "Single Azure resource group name used for this entire VMSS deployment stack."
   type        = string
   default     = "spendpilot-prod-rg"
 }
@@ -30,13 +30,13 @@ variable "admin_username" {
 }
 
 variable "admin_password" {
-  description = "Administrator password used for SSH login to the Linux virtual machines."
+  description = "Administrator password used for SSH login to the Linux virtual machine scale sets."
   type        = string
   sensitive   = true
 }
 
 variable "admin_allowed_cidrs" {
-  description = "CIDRs allowed to SSH into the Linux virtual machines."
+  description = "CIDRs allowed to SSH into the Linux virtual machine scale sets."
   type        = list(string)
   default     = []
 }
@@ -61,24 +61,20 @@ variable "backend_subnet_cidr" {
   default = "10.60.20.0/24"
 }
 
-variable "db_subnet_cidr" {
+variable "data_ai_subnet_cidr" {
   type    = string
   default = "10.60.30.0/24"
 }
 
-variable "frontend_private_ip" {
+variable "postgres_subnet_cidr" {
   type    = string
-  default = "10.60.10.4"
+  default = "10.60.40.0/24"
 }
 
-variable "backend_private_ip" {
-  type    = string
-  default = "10.60.20.4"
-}
-
-variable "data_private_ip" {
-  type    = string
-  default = "10.60.30.4"
+variable "ollama_lb_private_ip" {
+  description = "Static private IP exposed by the internal load balancer in front of the data-ai VM scale set."
+  type        = string
+  default     = "10.60.30.10"
 }
 
 variable "frontend_vm_size" {
@@ -96,38 +92,91 @@ variable "data_vm_size" {
   default = "Standard_D4ds_v5"
 }
 
-variable "postgres_container_image" {
-  description = "Container image used for the self-hosted PostgreSQL service on the data VM."
-  type        = string
-  default     = "postgres:16"
+variable "frontend_vmss_min_instances" {
+  type    = number
+  default = 1
+}
+
+variable "frontend_vmss_max_instances" {
+  type    = number
+  default = 2
+}
+
+variable "backend_vmss_min_instances" {
+  type    = number
+  default = 1
+}
+
+variable "backend_vmss_max_instances" {
+  type    = number
+  default = 2
+}
+
+variable "data_ai_vmss_min_instances" {
+  type    = number
+  default = 1
+}
+
+variable "data_ai_vmss_max_instances" {
+  type    = number
+  default = 2
 }
 
 variable "postgres_database_name" {
-  description = "Application database name created by the PostgreSQL container."
+  description = "Application database name created in Azure Database for PostgreSQL Flexible Server."
   type        = string
   default     = "spend_control"
 }
 
 variable "postgres_app_username" {
-  description = "Application database username created by the PostgreSQL container."
+  description = "Application login used by Azure Database for PostgreSQL Flexible Server."
   type        = string
   default     = "spendpilot"
 }
 
 variable "postgres_app_password" {
-  description = "Application database password used by the PostgreSQL container."
+  description = "Application password used by Azure Database for PostgreSQL Flexible Server."
   type        = string
   sensitive   = true
 }
 
-variable "postgres_port" {
-  description = "Private port exposed by PostgreSQL on the data VM."
-  type        = number
-  default     = 5432
+variable "postgres_version" {
+  type    = string
+  default = "16"
+}
+
+variable "postgres_sku_name" {
+  type    = string
+  default = "GP_Standard_D4ds_v5"
+}
+
+variable "postgres_storage_mb" {
+  type    = number
+  default = 131072
+}
+
+variable "postgres_backup_retention_days" {
+  type    = number
+  default = 7
+}
+
+variable "postgres_zone" {
+  type    = string
+  default = "1"
+}
+
+variable "postgres_ha_mode" {
+  type    = string
+  default = "ZoneRedundant"
+}
+
+variable "postgres_ha_standby_zone" {
+  type    = string
+  default = "2"
 }
 
 variable "ollama_container_image" {
-  description = "Container image used for the Ollama service on the data VM."
+  description = "Container image used for the Ollama service on the data-ai VM scale set."
   type        = string
   default     = "ollama/ollama:latest"
 }
@@ -139,7 +188,7 @@ variable "ollama_model" {
 }
 
 variable "ollama_port" {
-  description = "Private port exposed by Ollama on the data VM."
+  description = "Private port exposed by Ollama on the data-ai VM scale set."
   type        = number
   default     = 11434
 }

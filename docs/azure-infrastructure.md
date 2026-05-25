@@ -69,26 +69,29 @@ This keeps `expense-service`, `ai-service`, and PostgreSQL private while preserv
   - `appgw`
   - `frontend`
   - `backend`
-  - `db`
+  - `data-ai`
+  - `postgres`
 - Azure Application Gateway WAF v2 at the edge
-- One frontend Linux VM
-- One backend Linux VM
-- One data Linux VM for PostgreSQL and Ollama
+- One frontend Linux VM scale set
+- One backend Linux VM scale set
+- One data-ai Linux VM scale set for Ollama
+- Azure Database for PostgreSQL Flexible Server in private mode
+- Internal load balancer for private Ollama access
 - Log Analytics workspace
 
 Important networking note:
 
-- the frontend, backend, and data VMs are on different subnets, but they are still inside the same VNet
+- the frontend, backend, data-ai, and PostgreSQL subnets are all inside the same VNet
 - Azure routes traffic between those subnets by default unless NSGs block it
-- this Terraform allows backend-subnet to reach db-subnet on PostgreSQL and Ollama ports
+- this Terraform allows backend-subnet to reach the data-ai subnet on the Ollama port
 - the hostname `postgres` only works in the local Docker Compose network, not across Azure VMs
-- in VM mode, the backend workloads must use the data VM private IP or a private DNS name
+- in VMSS mode, the backend workloads use the PostgreSQL private FQDN and the private Ollama load balancer IP
 
 ## Production Suggestions
 
 - Put a real DNS name in front of the public edge and terminate TLS there
 - Prefer Azure Container Registry for Azure-hosted runtime pulls
-- Keep the PostgreSQL service bound to the private data VM only
+- Keep the PostgreSQL service private-only inside the delegated subnet
 - Treat Ollama as the first thing to split to its own compute pool if inference load grows
 - Add Azure Bastion or a private jump path before enabling direct SSH
 - Tighten CORS to the final public hostname once DNS is fixed
@@ -125,8 +128,9 @@ Deployment-specific modules now live beside their respective roots:
 
 The AKS root focuses on cluster infrastructure.
 
-The VM-Docker root focuses on three regular Linux VMs with Docker-ready cloud-init bootstrapping:
+The VM-Docker root now focuses on three Linux VM scale sets with Docker-ready cloud-init bootstrapping:
 
-- frontend VM
-- backend VM
-- data VM for PostgreSQL and Ollama
+- frontend VM scale set
+- backend VM scale set
+- data-ai VM scale set for Ollama
+- Azure Database for PostgreSQL Flexible Server

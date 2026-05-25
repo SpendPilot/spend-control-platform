@@ -14,9 +14,9 @@ if [[ ! -f "$TFVARS_FILE" ]]; then
 fi
 
 REPLACE_ARGS=(
-  "-replace=module.frontend_vms.azurerm_linux_virtual_machine.this[0]"
-  "-replace=module.backend_vms.azurerm_linux_virtual_machine.this[0]"
-  "-replace=module.data_vms.azurerm_linux_virtual_machine.this[0]"
+  "-replace=module.frontend_vmss.azurerm_linux_virtual_machine_scale_set.this"
+  "-replace=module.backend_vmss.azurerm_linux_virtual_machine_scale_set.this"
+  "-replace=module.data_ai_vmss.azurerm_linux_virtual_machine_scale_set.this"
 )
 
 terraform init -upgrade

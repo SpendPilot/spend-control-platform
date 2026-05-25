@@ -54,11 +54,11 @@ cd spend-control-platform
 docker compose -f docker-compose.backend.yml up --build
 ```
 
-For Azure VM mode on the backend VM, use the Azure-specific env file:
+For Azure VMSS mode on the backend scale set, use the Azure-specific env file:
 
 ```powershell
 Copy-Item .env.azure-vm.backend.example .env.azure-vm.backend
-# Replace <DATA_VM_PRIVATE_IP> and secrets first
+# Replace <POSTGRES_FQDN>, <OLLAMA_PRIVATE_LB_IP>, and secrets first
 docker compose --env-file .env.azure-vm.backend -f docker-compose.backend.yml up --build -d
 ```
 
@@ -80,7 +80,7 @@ Copy-Item .env.example .env
 ```
 
 All services use environment variables defined in `.env` for configuration, including:
-- PostgreSQL credentials (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`)
+- local PostgreSQL credentials for the local Docker Compose path
 - API endpoints and CORS origins
 - JWT secrets
 - Ollama model configuration
@@ -127,9 +127,9 @@ terraform plan
 terraform apply
 ```
 
-### Regular Azure VMs
+### Regular Azure VM Scale Sets
 
-This path now uses fixed Linux VMs, not scale sets.
+This path now uses three Linux VM scale sets plus Azure Database for PostgreSQL Flexible Server.
 
 ```powershell
 cd c:\Users\lijaz\Desktop\PROJECT2\spend-control-platform\terraform\azure\vm-docker
@@ -139,7 +139,7 @@ terraform plan
 terraform apply
 ```
 
-To force all three VMs to rebuild and re-run cloud-init bootstrap with the latest repo code:
+To force all three VM scale sets to refresh cloud-init bootstrap with the latest repo code:
 
 ```powershell
 cd c:\Users\lijaz\Desktop\PROJECT2\spend-control-platform
@@ -152,19 +152,20 @@ Plan-only mode:
 .\scripts\rebootstrap_vm_docker_vms.ps1 -PlanOnly
 ```
 
-What the VM path provisions:
+What the VMSS path provisions:
 
 - public Azure Application Gateway WAF v2
-- one frontend VM
-- one backend VM
-- one data VM for PostgreSQL and Ollama
-- Docker-ready cloud-init on the VMs
+- one frontend VM scale set
+- one backend VM scale set
+- one data-ai VM scale set for Ollama
+- Azure Database for PostgreSQL Flexible Server in a delegated subnet
+- Docker-ready cloud-init on the scale set instances
 
-Important for VM mode:
+Important for VMSS mode:
 
 - `postgres` and `ollama` are Docker-local hostnames used only by the local Compose setup
-- in Azure VM mode, the backend VM must connect to the data VM over the VNet using the data VM private IP or private DNS name
-- Terraform now outputs `data_vm_private_ips` to make that wiring easier
+- in Azure VMSS mode, the backend scale set connects to PostgreSQL Flexible Server through its private FQDN
+- Ollama is exposed privately through an internal load balancer, surfaced as `ollama_private_load_balancer_ip`
 
 Module structure:
 

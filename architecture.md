@@ -80,12 +80,13 @@ This recommendation matters because the current frontend makes browser-side call
 
 ### VM-Docker Path
 
-- one Linux virtual machine for the frontend
-- one Linux virtual machine for the backend services
-- one Linux virtual machine for PostgreSQL and Ollama
+- one Linux VM scale set for the frontend
+- one Linux VM scale set for the backend services
+- one Linux VM scale set for Ollama
 - Azure Application Gateway WAF v2 at the edge with path-based routing
-- backend virtual machine intended to host the API tier privately
-- PostgreSQL runs inside the data VM as a service
+- backend VM scale set intended to host the API tier privately
+- Azure Database for PostgreSQL Flexible Server in a delegated subnet
+- private internal load balancer for Ollama
 - Azure Container Registry provisioned for later CI/CD hardening
 
 ### Why not "public frontend load balancer + internal application gateway" by default

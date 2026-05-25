@@ -16,16 +16,22 @@ vnet_cidr                 = "10.60.0.0/16"
 appgw_subnet_cidr         = "10.60.0.0/24"
 frontend_subnet_cidr      = "10.60.10.0/24"
 backend_subnet_cidr       = "10.60.20.0/24"
-db_subnet_cidr            = "10.60.30.0/24"
-frontend_private_ip       = "10.60.10.4"
-backend_private_ip        = "10.60.20.4"
-data_private_ip           = "10.60.30.4"
+data_ai_subnet_cidr       = "10.60.30.0/24"
+postgres_subnet_cidr      = "10.60.40.0/24"
+ollama_lb_private_ip      = "10.60.30.10"
 
 zones                     = ["1", "2", "3"]
 
 frontend_vm_size          = "Standard_D2s_v5"
 backend_vm_size           = "Standard_D2s_v5"
 data_vm_size              = "Standard_D4s_v5"
+
+frontend_vmss_min_instances = 1
+frontend_vmss_max_instances = 2
+backend_vmss_min_instances  = 1
+backend_vmss_max_instances  = 2
+data_ai_vmss_min_instances  = 1
+data_ai_vmss_max_instances  = 2
 
 app_gateway_min_capacity  = 2
 app_gateway_max_capacity  = 6
@@ -34,11 +40,16 @@ bootstrap_repo_owner      = "SpendPilot"
 bootstrap_repo_branch     = "main"
 jwt_secret_key            = "change-this-before-production"
 
-postgres_container_image  = "postgres:16"
 postgres_database_name    = "spend_control"
 postgres_app_username     = "spendpilot"
 postgres_app_password     = "ChangeThisBeforeApply-Prod-AppDb-123!"
-postgres_port             = 5432
+postgres_version          = "16"
+postgres_sku_name         = "GP_Standard_D4ds_v5"
+postgres_storage_mb       = 131072
+postgres_backup_retention_days = 7
+postgres_zone             = "1"
+postgres_ha_mode          = "ZoneRedundant"
+postgres_ha_standby_zone  = "2"
 
 ollama_container_image    = "ollama/ollama:latest"
 ollama_model              = "llama3.2"

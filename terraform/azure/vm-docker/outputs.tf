@@ -10,26 +10,30 @@ output "application_gateway_id" {
   value = module.app_gateway.id
 }
 
-output "frontend_vm_names" {
-  value = module.frontend_vms.vm_names
+output "frontend_scale_set_name" {
+  value = module.frontend_vmss.name
 }
 
-output "frontend_vm_private_ips" {
-  value = module.frontend_vms.private_ip_addresses
+output "backend_scale_set_name" {
+  value = module.backend_vmss.name
 }
 
-output "backend_vm_names" {
-  value = module.backend_vms.vm_names
+output "data_ai_scale_set_name" {
+  value = module.data_ai_vmss.name
 }
 
-output "backend_vm_private_ips" {
-  value = module.backend_vms.private_ip_addresses
+output "postgres_server_name" {
+  value = module.postgres.server_name
 }
 
-output "data_vm_names" {
-  value = module.data_vms.vm_names
+output "postgres_fqdn" {
+  value = module.postgres.fqdn
 }
 
-output "data_vm_private_ips" {
-  value = module.data_vms.private_ip_addresses
+output "postgres_database_name" {
+  value = module.postgres.database_name
+}
+
+output "ollama_private_load_balancer_ip" {
+  value = var.ollama_lb_private_ip
 }

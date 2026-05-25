@@ -160,7 +160,7 @@ docker compose -f docker-compose.backend.yml up --build
 ```powershell
 cd spend-control-platform
 Copy-Item .env.azure-vm.backend.example .env.azure-vm.backend
-# Replace <DATA_VM_PRIVATE_IP> and secrets
+# Replace <POSTGRES_FQDN>, <OLLAMA_PRIVATE_LB_IP>, and secrets
 docker compose --env-file .env.azure-vm.backend -f docker-compose.backend.yml up --build -d
 ```
 
