@@ -195,7 +195,7 @@ module "frontend_vms" {
   node_role                    = "frontend"
   bootstrap_repo_owner         = var.bootstrap_repo_owner
   bootstrap_repo_branch        = var.bootstrap_repo_branch
-  bootstrap_app_env            = var.environment == "prod" ? "production" : var.environment
+  bootstrap_app_env            = "development"
   bootstrap_public_base_url    = "http://${module.app_gateway.public_ip_address}"
   bootstrap_data_vm_private_ip = var.data_private_ip
   bootstrap_jwt_secret_key     = var.jwt_secret_key
