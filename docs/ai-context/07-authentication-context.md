@@ -3,7 +3,7 @@
 Production auth model:
 
 - Microsoft Entra ID
-- multi-tenant app registrations
+- multitenant app registrations with `common` authority
 - frontend SPA obtains API tokens with MSAL
 - backend validates Entra JWTs and enforces tenant-aware RBAC
 - user sessions are stored in the application database
@@ -22,6 +22,8 @@ Bootstrap behavior:
 - one organization is created per Entra tenant ID
 - the first user from a tenant becomes `org_admin`
 - platform admins can also be injected with `PLATFORM_ADMIN_EMAILS`
+- personal Microsoft accounts are only accepted when their email is in `PLATFORM_ADMIN_EMAILS`
+- those personal platform admins are mapped into the internal `Platform Operations` organization instead of a customer tenant
 
 Dev fallback:
 

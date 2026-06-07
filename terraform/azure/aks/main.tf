@@ -208,7 +208,7 @@ resource "azurerm_cdn_frontdoor_endpoint" "this" {
 
 resource "azuread_application" "backend_api" {
   display_name     = "${local.name}-backend-api"
-  sign_in_audience = "AzureADMultipleOrgs"
+  sign_in_audience = "AzureADandPersonalMicrosoftAccount"
   owners           = [data.azuread_client_config.current.object_id]
   identifier_uris  = [local.backend_audience]
 
@@ -288,8 +288,12 @@ resource "azuread_service_principal" "backend_api" {
 
 resource "azuread_application" "frontend_spa" {
   display_name     = "${local.name}-frontend-spa"
-  sign_in_audience = "AzureADMultipleOrgs"
+  sign_in_audience = "AzureADandPersonalMicrosoftAccount"
   owners           = [data.azuread_client_config.current.object_id]
+
+  api {
+    requested_access_token_version = 2
+  }
 
   single_page_application {
     redirect_uris = local.frontend_redirect_uris
@@ -471,7 +475,7 @@ resource "helm_release" "application" {
       }
       auth = {
         mode                = "entra"
-        authority           = "https://login.microsoftonline.com/organizations"
+        authority           = "https://login.microsoftonline.com/common"
         frontendClientId    = azuread_application.frontend_spa.client_id
         backendClientId     = azuread_application.backend_api.client_id
         backendAudience     = local.backend_audience

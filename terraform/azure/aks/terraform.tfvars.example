@@ -7,7 +7,7 @@ postgres_admin_login        = "spendcontroladmin"
 postgres_admin_password     = "ReplaceWithStrongPassword!"
 image_tag                   = "latest"
 foundry_location            = "East US 2"
-platform_admin_emails       = "finance-admin@example.com"
+platform_admin_emails       = "owner@example.com"
 allowed_tenant_ids          = ""
 
 tags = {

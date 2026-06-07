@@ -10,6 +10,10 @@ from app.core.config import get_settings
 from app.core.rbac import ROLE_EMPLOYEE, ROLE_ORG_ADMIN, ROLE_PLATFORM_ADMIN, derive_highest_role, normalize_role
 from app.models import ExpenseCategory, Organization, OrganizationMembership, User, UserSession
 
+MICROSOFT_CONSUMER_TENANT_ID = "9188040d-6c67-4c5b-b112-36a304b66dad"
+PLATFORM_PERSONAL_ADMIN_TENANT_ID = "platform-personal-admins"
+PLATFORM_PERSONAL_ADMIN_ORG_NAME = "Platform Operations"
+
 DEFAULT_CATEGORIES = [
     ("travel", "Travel"),
     ("meals", "Meals"),
@@ -36,6 +40,17 @@ def _slugify(value: str) -> str:
 def _org_name_from_email(email: str) -> str:
     domain = email.split("@")[-1].split(".")[0].replace("-", " ").replace("_", " ")
     return domain.title() or "Organization"
+
+
+def _is_personal_microsoft_account(payload: dict) -> bool:
+    tenant_id = str(payload.get("tid") or "").strip().lower()
+    issuer = str(payload.get("iss") or "").strip().lower()
+    identity_provider = str(payload.get("idp") or "").strip().lower()
+    return (
+        tenant_id == MICROSOFT_CONSUMER_TENANT_ID
+        or "/consumers/" in issuer
+        or identity_provider in {"live.com", "9188040d-6c67-4c5b-b112-36a304b66dad"}
+    )
 
 
 def _claims_roles(payload: dict) -> list[str]:
@@ -117,31 +132,38 @@ def sync_user_context_from_claims(
     if not email:
         raise ValueError("Authenticated token did not include an email address")
 
-    tenant_id = payload.get("tid") or "local-dev-tenant"
+    email = str(email).strip()
+    original_tenant_id = str(payload.get("tid") or "local-dev-tenant")
+    is_platform_admin = email.lower() in settings.platform_admin_emails_list
+    is_personal_account = _is_personal_microsoft_account(payload)
+    if is_personal_account and not is_platform_admin:
+        raise ValueError("Personal Microsoft accounts are only allowed for configured platform admins.")
+
+    tenant_id = PLATFORM_PERSONAL_ADMIN_TENANT_ID if is_personal_account else original_tenant_id
     external_id = _external_id_from_claims(payload)
     user = db.query(User).filter(User.external_id == external_id).first()
     if user is None:
         user = User(
             external_id=external_id,
             entra_oid=payload.get("oid"),
-            home_tenant_id=tenant_id,
+            home_tenant_id=original_tenant_id,
             email=email,
             display_name=payload.get("name") or email.split("@")[0],
-            platform_role=ROLE_PLATFORM_ADMIN if email.lower() in settings.platform_admin_emails_list else ROLE_EMPLOYEE,
+            platform_role=ROLE_PLATFORM_ADMIN if is_platform_admin else ROLE_EMPLOYEE,
         )
         db.add(user)
         db.flush()
     else:
         user.entra_oid = payload.get("oid") or user.entra_oid
-        user.home_tenant_id = tenant_id
+        user.home_tenant_id = original_tenant_id
         user.email = email
         user.display_name = payload.get("name") or user.display_name
-        if email.lower() in settings.platform_admin_emails_list:
+        if is_platform_admin:
             user.platform_role = ROLE_PLATFORM_ADMIN
 
     organization = db.query(Organization).filter(Organization.tenant_id == tenant_id).first()
     if organization is None:
-        org_name = payload.get("tenant_name") or _org_name_from_email(email)
+        org_name = PLATFORM_PERSONAL_ADMIN_ORG_NAME if is_personal_account else payload.get("tenant_name") or _org_name_from_email(email)
         organization = Organization(
             tenant_id=tenant_id,
             name=org_name,
@@ -164,7 +186,7 @@ def sync_user_context_from_claims(
         membership = OrganizationMembership(
             organization_id=organization.id,
             user_id=user.id,
-            role=_default_membership_role(db, organization, payload),
+            role=ROLE_ORG_ADMIN if is_personal_account else _default_membership_role(db, organization, payload),
         )
         db.add(membership)
 

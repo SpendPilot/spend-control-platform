@@ -7,7 +7,7 @@ Terraform now creates the core app registrations:
 
 Backend API registration:
 
-- multi-tenant audience: `AzureADMultipleOrgs`
+- supported account types: `AzureADandPersonalMicrosoftAccount`
 - application ID URI: `api://<prefix>-<env>-api`
 - scope: `access_as_user`
 - app roles:
@@ -20,8 +20,12 @@ Backend API registration:
 
 Frontend SPA registration:
 
-- multi-tenant audience: `AzureADMultipleOrgs`
+- supported account types: `AzureADandPersonalMicrosoftAccount`
+- authority: `https://login.microsoftonline.com/common`
+- requested access token version: `2`
 - local redirect URI for `http://localhost:3000/login`
 - Front Door login redirect URI based on the deployed endpoint hostname
 
 Customer tenant onboarding still requires tenant admin consent and role assignment in the customer tenant because this is a multi-tenant SaaS model.
+
+Personal Microsoft accounts are only supported for platform-owner access. The backend accepts personal accounts only when the email is listed in `PLATFORM_ADMIN_EMAILS`. Customer company users must still use work or school accounts from their own Entra tenants.

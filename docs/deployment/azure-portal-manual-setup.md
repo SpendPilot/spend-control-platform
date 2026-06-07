@@ -76,16 +76,26 @@ Front Door:
 Create two app registrations:
 
 1. Frontend SPA app
+   - supported account types: Accounts in any organizational directory and personal Microsoft accounts
+   - set access token version to `2`
    - platform: Single-page application
    - redirect URIs:
      - `https://<frontdoor-domain>/login`
      - local development URI if needed
 
 2. Backend API app
+   - supported account types: Accounts in any organizational directory and personal Microsoft accounts
    - expose an API application ID URI
+   - set access token version to `2`
    - create app roles if you want tenant-side role assignment
 
 Grant admin consent after both apps are configured.
+
+Important:
+
+- use the `common` authority in the frontend configuration
+- keep customer-company onboarding on work or school accounts
+- only emails listed in `PLATFORM_ADMIN_EMAILS` should be allowed to use personal Microsoft accounts for platform administration
 
 ## Images and registry
 

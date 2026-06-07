@@ -28,6 +28,11 @@
 - `ENTRA_ALLOWED_TENANT_IDS`
 - `PLATFORM_ADMIN_EMAILS`
 
+Notes:
+
+- use `https://login.microsoftonline.com/common` when you want the platform-owner login to accept a personal Microsoft account
+- `PLATFORM_ADMIN_EMAILS` is the allowlist for those personal platform-admin accounts
+
 ## Dev-only auth
 
 - `DEV_AUTH_SECRET`

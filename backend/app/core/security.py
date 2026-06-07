@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.config import Settings, get_settings
 from app.core.rbac import APPROVAL_ROLES, FINANCE_WRITE_ROLES, ORG_READ_ROLES
 from app.db.session import get_db
+from app.services.user_service import MICROSOFT_CONSUMER_TENANT_ID
 from app.services.user_service import sync_user_context_from_claims
 
 bearer_scheme = HTTPBearer(auto_error=False)
@@ -80,10 +81,20 @@ class EntraTokenValidator:
     def _validate_tenant_and_issuer(self, payload: dict) -> None:
         tenant_id = str(payload.get("tid", "")).strip()
         issuer = str(payload.get("iss", "")).strip()
+        email = str(payload.get("preferred_username") or payload.get("upn") or payload.get("email") or "").strip().lower()
         if not tenant_id or not self._looks_like_guid(tenant_id):
             raise jwt.InvalidTokenError("Token did not include a valid tenant ID")
 
-        if self.settings.allowed_tenant_ids_list and tenant_id not in self.settings.allowed_tenant_ids_list:
+        is_personal_platform_admin = (
+            tenant_id == MICROSOFT_CONSUMER_TENANT_ID
+            and email
+            and email in self.settings.platform_admin_emails_list
+        )
+        if (
+            self.settings.allowed_tenant_ids_list
+            and tenant_id not in self.settings.allowed_tenant_ids_list
+            and not is_personal_platform_admin
+        ):
             raise jwt.InvalidTokenError("Tenant is not allowed for this API")
 
         if "{tenantid}" in self.issuer:

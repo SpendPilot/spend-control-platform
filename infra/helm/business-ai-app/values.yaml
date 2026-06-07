@@ -135,7 +135,7 @@ env:
 
 auth:
   mode: entra
-  authority: https://login.microsoftonline.com/organizations
+  authority: https://login.microsoftonline.com/common
   frontendClientId: ""
   backendClientId: ""
   backendAudience: ""

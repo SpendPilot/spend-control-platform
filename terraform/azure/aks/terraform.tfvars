@@ -6,6 +6,7 @@ resource_group_name          = "spendpilot-rg"
 aks_node_resource_group_name = "spendpilot-aks-rg"
 postgres_admin_login         = "spendpilot"
 postgres_admin_password      = "postgresspass"
+platform_admin_emails        = "lijazsalim@gmail.com"
 
 tags = {
   owner   = "platform-team"
