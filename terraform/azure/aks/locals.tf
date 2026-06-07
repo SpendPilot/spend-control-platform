@@ -14,6 +14,7 @@ locals {
       ["https://${azurerm_cdn_frontdoor_endpoint.this.host_name}/login"],
     )
   )
+  kube_admin_config = try(yamldecode(data.azurerm_kubernetes_cluster.credentials.kube_admin_config_raw), null)
 
   tags = merge(
     {

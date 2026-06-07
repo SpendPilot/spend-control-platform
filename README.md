@@ -70,6 +70,8 @@ helm template spend-control infra/helm/business-ai-app
 
 - [Architecture](docs/azure-infrastructure.md)
 - [AKS + Front Door + kGateway](docs/deployment/aks-kgateway-frontdoor.md)
+- [Terraform AKS runbook](docs/deployment/terraform-aks-runbook.md)
+- [Azure portal manual setup](docs/deployment/azure-portal-manual-setup.md)
 - [AKS Helm deployment](docs/deployment/aks-helm.md)
 - [AKS raw manifests](docs/deployment/aks-raw-yaml.md)
 - [Entra app setup](docs/deployment/azure-entra-setup.md)

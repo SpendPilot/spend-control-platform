@@ -8,6 +8,10 @@ When continuing work in this repo:
 - do not reintroduce Kubernetes Ingress as the default path
 - keep Workload Identity and `DefaultAzureCredential` as the preferred Azure auth model
 - update `docs/ai-context/` whenever the runtime shape, auth model, or deployment path changes
+- preserve the vendored kGateway charts unless OCI pulls become reliable again in the target environment
+- keep the app namespace bootstrap in Terraform, not inside the app Helm release
+- keep the migration job as a post-install and post-upgrade hook
+- prefer GitHub-backed ACR Tasks when the operator workstation is constrained by SSL interception or Docker restrictions
 
 Likely next extensions:
 

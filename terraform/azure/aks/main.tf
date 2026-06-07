@@ -92,6 +92,13 @@ module "aks_cluster" {
   tags                       = local.tags
 }
 
+data "azurerm_kubernetes_cluster" "credentials" {
+  name                = module.aks_cluster.name
+  resource_group_name = module.resource_group.name
+
+  depends_on = [module.aks_cluster]
+}
+
 resource "azurerm_role_assignment" "acr_pull" {
   scope                = module.container_registry.id
   role_definition_name = "AcrPull"
@@ -303,18 +310,12 @@ resource "azuread_service_principal" "frontend_spa" {
 }
 
 provider "kubernetes" {
-  host                   = module.aks_cluster.host
-  client_certificate     = base64decode(module.aks_cluster.client_certificate)
-  client_key             = base64decode(module.aks_cluster.client_key)
-  cluster_ca_certificate = base64decode(module.aks_cluster.cluster_ca_certificate)
+  config_path = "${path.root}/.generated-kubeconfig"
 }
 
 provider "helm" {
   kubernetes {
-    host                   = module.aks_cluster.host
-    client_certificate     = base64decode(module.aks_cluster.client_certificate)
-    client_key             = base64decode(module.aks_cluster.client_key)
-    cluster_ca_certificate = base64decode(module.aks_cluster.cluster_ca_certificate)
+    config_path = "${path.root}/.generated-kubeconfig"
   }
 }
 
@@ -368,11 +369,9 @@ resource "terraform_data" "gateway_api_crds" {
 }
 
 resource "helm_release" "kgateway_crds" {
-  name       = "kgateway-crds"
-  repository = "oci://cr.kgateway.dev/kgateway-dev/charts"
-  chart      = "kgateway-crds"
-  version    = var.kgateway_version
-  namespace  = "kgateway-system"
+  name      = "kgateway-crds"
+  chart     = "${path.root}/../../../infra/vendor/kgateway/kgateway-crds"
+  namespace = "kgateway-system"
 
   create_namespace = true
 
@@ -380,27 +379,45 @@ resource "helm_release" "kgateway_crds" {
 }
 
 resource "helm_release" "kgateway" {
-  name       = "kgateway"
-  repository = "oci://cr.kgateway.dev/kgateway-dev/charts"
-  chart      = "kgateway"
-  version    = var.kgateway_version
-  namespace  = "kgateway-system"
+  name      = "kgateway"
+  chart     = "${path.root}/../../../infra/vendor/kgateway/kgateway"
+  namespace = "kgateway-system"
 
   create_namespace = true
+  values = [
+    yamlencode({
+      image = {
+        tag = var.kgateway_version
+      }
+      controller = {
+        image = {
+          tag = var.kgateway_version
+        }
+      }
+    }),
+  ]
 
   depends_on = [helm_release.kgateway_crds]
+}
+
+resource "kubernetes_namespace" "application" {
+  metadata {
+    name = var.namespace
+  }
 }
 
 resource "helm_release" "application" {
   name             = "spend-control"
   chart            = "${path.root}/../../../infra/helm/business-ai-app"
   namespace        = var.namespace
-  create_namespace = true
+  create_namespace = false
+  timeout          = 600
+  wait_for_jobs    = true
 
   values = [
     yamlencode({
       namespace = {
-        create = true
+        create = false
         name   = var.namespace
       }
       serviceAccount = {
@@ -477,6 +494,7 @@ resource "helm_release" "application" {
   ]
 
   depends_on = [
+    kubernetes_namespace.application,
     helm_release.kgateway,
     azurerm_federated_identity_credential.workload,
     azurerm_role_assignment.storage_blob_contributor,
@@ -563,7 +581,7 @@ resource "azurerm_cdn_frontdoor_route" "this" {
   cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.this.id
   cdn_frontdoor_origin_ids      = [azurerm_cdn_frontdoor_origin.kgateway.id]
   enabled                       = true
-  forwarding_protocol           = "MatchRequest"
+  forwarding_protocol           = "HttpOnly"
   https_redirect_enabled        = true
   patterns_to_match             = ["/*"]
   supported_protocols           = ["Http", "Https"]

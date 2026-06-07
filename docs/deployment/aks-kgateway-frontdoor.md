@@ -25,3 +25,9 @@ Operational notes:
 - Backend services stay `ClusterIP`
 - Browser traffic should keep `NEXT_PUBLIC_API_BASE_URL=/api`
 - Front Door default domain is used by default; custom domains can be added later
+- The kGateway chart is vendored in `infra/vendor/kgateway/` to avoid OCI pull issues in restricted networks
+- The app namespace is created by Terraform before the Helm release; the chart itself should not also be relied on for namespace bootstrap
+- The migration job is a post-install and post-upgrade hook because it depends on the chart-created ServiceAccount and Secret
+- The AKS gateway service is a `LoadBalancer` service named `spend-control-gateway`
+- Front Door may take additional time to propagate even after `provisioningState` is `Succeeded`
+- The validated route forwards HTTP from Front Door to the AKS gateway while Front Door still redirects clients to HTTPS at the edge

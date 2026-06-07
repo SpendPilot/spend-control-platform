@@ -68,4 +68,8 @@ resource "azurerm_kubernetes_cluster_node_pool" "apps" {
   orchestrator_version  = var.kubernetes_version
   max_pods              = 50
   tags                  = var.tags
+
+  upgrade_settings {
+    max_surge = "10%"
+  }
 }

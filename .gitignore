@@ -10,3 +10,5 @@ terraform.tfvars
 __pycache__/
 node_modules/
 backend/tests/*.db
+.tmp/
+terraform/azure/aks/.generated-kubeconfig

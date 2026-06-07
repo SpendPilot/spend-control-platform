@@ -30,8 +30,11 @@ Application deployment source of truth:
 Key design points:
 
 - minimal AKS node pools: one system pool and one user pool
-- `Standard_D2s_v5` node sizing by default
-- Central India default region
+- `Standard_D2s_v3` node sizing in the validated subscription because `Standard_DSv5` quota was unavailable in `Central India`
+- Central India remains the default region for the core platform
+- Azure AI Foundry is intentionally separated to `East US 2` in the validated path
 - one managed identity shared by the application pods
 - Entra multi-tenant app registrations created during Terraform apply
 - Terraform uses Azure CLI during apply for `az acr build` and `az aks command invoke`
+- the validated fallback for restricted laptops is GitHub-backed ACR Tasks plus `build_images_during_apply=false`
+- kGateway is installed from the vendored official chart source in `infra/vendor/kgateway/`
