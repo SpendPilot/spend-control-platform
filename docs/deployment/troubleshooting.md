@@ -26,6 +26,12 @@ Azure sign-in page says "You can't sign in here with a personal account":
 - The Entra app registration is still restricted to work or school accounts
 - Or the frontend authority is still `organizations` instead of `common`
 
+External tenant sign-in fails with `AADSTS650052`:
+
+- The customer tenant does not have the frontend and backend enterprise applications provisioned yet
+- Confirm the backend API registration bundles consent through known client applications and pre-authorized frontend access
+- Ask a tenant admin in that customer tenant to open the admin-consent URL and complete consent if user consent is blocked or if service-principal creation has not happened yet
+
 Backend token validation fails:
 
 - Check `ENTRA_BACKEND_AUDIENCE`

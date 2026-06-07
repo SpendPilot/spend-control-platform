@@ -30,12 +30,20 @@ output "backend_api_audience" {
   value = local.backend_audience
 }
 
+output "backend_api_scope" {
+  value = "${local.backend_audience}/access_as_user"
+}
+
 output "frontend_client_id" {
   value = azuread_application.frontend_spa.client_id
 }
 
 output "backend_client_id" {
   value = azuread_application.backend_api.client_id
+}
+
+output "entra_admin_consent_url_template" {
+  value = "https://login.microsoftonline.com/<tenant-id-or-domain>/v2.0/adminconsent?client_id=${azuread_application.frontend_spa.client_id}&scope=${urlencode("${local.backend_audience}/.default")}&redirect_uri=${urlencode("https://${azurerm_cdn_frontdoor_endpoint.this.host_name}/login")}"
 }
 
 output "workload_identity_client_id" {

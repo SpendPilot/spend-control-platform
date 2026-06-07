@@ -9,6 +9,7 @@ Production auth model:
 - user sessions are stored in the application database
 - frontend API scopes must use the backend Application ID URI, not the backend client ID
 - backend token validation accepts the configured Application ID URI and both client-ID audience forms to tolerate Microsoft v2 token audience differences across personal and organizational accounts
+- Entra app registrations bundle consent between the frontend SPA and backend API via known client applications and pre-authorization for the `access_as_user` scope
 
 Role model:
 
@@ -26,6 +27,7 @@ Bootstrap behavior:
 - the first user from a tenant becomes `org_admin`
 - platform admins can also be injected with `PLATFORM_ADMIN_EMAILS`
 - end users do not need pre-registration in the app; first successful sign-in bootstraps the account automatically
+- external customer-tenant service principals are created by consent in that tenant, not directly by Terraform in the home tenant
 
 Dev fallback:
 

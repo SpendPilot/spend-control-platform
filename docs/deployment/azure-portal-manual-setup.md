@@ -87,6 +87,8 @@ Create two app registrations:
    - supported account types: Accounts in any organizational directory and personal Microsoft accounts
    - expose an API application ID URI
    - set access token version to `2`
+   - add the frontend SPA app ID to known client applications
+   - pre-authorize the frontend SPA app for the backend `access_as_user` delegated scope
    - create app roles if you want tenant-side role assignment
 
 Grant admin consent after both apps are configured in your home tenant.
@@ -100,6 +102,7 @@ Important:
 - end users do not need to be pre-registered in the app database
 - first successful browser sign-in bootstraps the app-side account automatically
 - customer tenants may still require tenant-admin consent if their Entra policies block user consent
+- cross-tenant service principals are created by consent inside the customer tenant; you cannot pre-create them from your own tenant without their admin participating
 
 ## Images and registry
 
@@ -144,5 +147,6 @@ Use these checks after the portal build:
 - the gateway public IP returns `200 OK`
 - the Front Door hostname returns the frontend after propagation
 - a first-time user can finish the browser consent flow and then `GET /api/auth/me` returns JSON instead of `401 Invalid access token`
+- if a customer tenant sees `AADSTS650052`, a tenant admin must use the admin-consent URL for that tenant so Entra creates the frontend and backend enterprise applications there
 
 If Front Door keeps returning the Azure error page with `X-Cache: CONFIG_NOCACHE` for more than roughly 45 minutes while the gateway public IP is healthy, treat it as an Azure Front Door propagation issue and escalate through Azure support.

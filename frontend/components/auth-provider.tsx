@@ -149,8 +149,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await app.initialize();
         const redirectResult = await app.handleRedirectPromise();
+        const cachedAccounts = app.getAllAccounts();
         const activeAccount =
-          redirectResult?.account || app.getActiveAccount() || app.getAllAccounts()[0] || null;
+          redirectResult?.account ||
+          app.getActiveAccount() ||
+          (cachedAccounts.length === 1 ? cachedAccounts[0] : null);
         if (activeAccount) {
           app.setActiveAccount(activeAccount);
           await completeEntraSession(app, activeAccount);
@@ -185,7 +188,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    await app.loginRedirect({ scopes: [apiScope] });
+    await app.loginRedirect({ scopes: [apiScope], prompt: "select_account" });
   };
 
   const devLogin = async (requestedProfile?: { email?: string; display_name?: string; role?: string }) => {

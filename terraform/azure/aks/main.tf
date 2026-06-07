@@ -298,19 +298,27 @@ resource "azuread_application" "frontend_spa" {
   single_page_application {
     redirect_uris = local.frontend_redirect_uris
   }
-
-  required_resource_access {
-    resource_app_id = azuread_application.backend_api.client_id
-
-    resource_access {
-      id   = uuidv5("dns", "${local.name}-access-as-user")
-      type = "Scope"
-    }
-  }
 }
 
 resource "azuread_service_principal" "frontend_spa" {
   client_id = azuread_application.frontend_spa.client_id
+}
+
+resource "azuread_application_api_access" "frontend_to_backend" {
+  application_id = azuread_application.frontend_spa.id
+  api_client_id  = azuread_application.backend_api.client_id
+  scope_ids      = [azuread_application.backend_api.oauth2_permission_scope_ids["access_as_user"]]
+}
+
+resource "azuread_application_known_clients" "backend_known_frontend" {
+  application_id   = azuread_application.backend_api.id
+  known_client_ids = [azuread_application.frontend_spa.client_id]
+}
+
+resource "azuread_application_pre_authorized" "backend_pre_authorize_frontend" {
+  application_id       = azuread_application.backend_api.id
+  authorized_client_id = azuread_application.frontend_spa.client_id
+  permission_ids       = [azuread_application.backend_api.oauth2_permission_scope_ids["access_as_user"]]
 }
 
 provider "kubernetes" {

@@ -13,6 +13,8 @@ Latest major refactor:
 9. corrected Entra API scope wiring to use the backend Application ID URI
 10. refactored auth bootstrap so personal Microsoft accounts get isolated workspaces instead of being rejected or merged together
 11. hardened frontend API URL building so `/api` base paths cannot turn into `/api/api/...` during login callbacks
+12. bundled Entra consent between the frontend SPA and backend API with known clients and pre-authorization, and added an admin-consent path for external customer tenants
+13. forced explicit account selection on Microsoft login so cached browser sessions do not silently reuse the wrong tenant user
 
 Intentional simplification kept:
 

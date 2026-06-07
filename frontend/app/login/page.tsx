@@ -5,10 +5,26 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/components/auth-provider";
+import { getRuntimeConfig } from "@/lib/runtime-config";
+
+function buildAdminConsentUrl(error: string) {
+  const tenantMatch = error.match(/organization '([^']+)'/i);
+  const tenant = tenantMatch?.[1];
+  if (!tenant) return null;
+
+  const runtimeConfig = getRuntimeConfig();
+  const clientId = runtimeConfig.entraFrontendClientId;
+  const scope = runtimeConfig.entraBackendAudience ? `${runtimeConfig.entraBackendAudience}/.default` : "";
+  if (!clientId || !scope || typeof window === "undefined") return null;
+
+  const redirectUri = `${window.location.origin}/login`;
+  return `https://login.microsoftonline.com/${encodeURIComponent(tenant)}/v2.0/adminconsent?client_id=${encodeURIComponent(clientId)}&scope=${encodeURIComponent(scope)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const { authMode, error, login, devLogin, ready, token } = useAuth();
+  const adminConsentUrl = error?.includes("AADSTS650052") ? buildAdminConsentUrl(error) : null;
 
   useEffect(() => {
     if (ready && token) {
@@ -74,6 +90,14 @@ export default function LoginPage() {
           {error ? (
             <div className="mt-6 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
               {error}
+              {adminConsentUrl ? (
+                <div className="mt-3 text-xs text-rose-800 dark:text-rose-100">
+                  This tenant has not finished onboarding the app yet. A tenant admin can complete consent here:{" "}
+                  <a className="underline" href={adminConsentUrl}>
+                    grant tenant consent
+                  </a>
+                </div>
+              ) : null}
             </div>
           ) : null}
 

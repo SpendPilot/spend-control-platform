@@ -141,6 +141,7 @@ Terraform does not manage these external steps:
 - map `myfinagent.online` to Azure Front Door from Hostinger
 - add the Front Door custom domain and validate TLS in the Azure portal
 - assign customer users in their own Entra tenants after they consent to the app
+- if a customer tenant blocks user consent or has not onboarded the app yet, have a tenant admin open the `entra_admin_consent_url_template` output with their tenant ID filled in so Entra can create the external enterprise applications and service principals
 
 ## Front Door note
 
