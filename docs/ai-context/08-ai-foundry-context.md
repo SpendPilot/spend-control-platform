@@ -19,3 +19,7 @@ Fallback behavior:
 
 - local regex extraction for invoice hints
 - keyword-based risk detection if Azure AI is unavailable
+
+Implementation note:
+
+- extracted expense payloads can contain decimal totals, so document metadata and scan raw responses must be JSON-encoded safely before writing to PostgreSQL JSON columns

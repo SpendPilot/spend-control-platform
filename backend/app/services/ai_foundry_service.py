@@ -9,6 +9,7 @@ from pathlib import Path
 
 from azure.ai.documentintelligence import DocumentIntelligenceClient
 from azure.identity import get_bearer_token_provider
+from fastapi.encoders import jsonable_encoder
 from openai import AzureOpenAI
 
 from app.core.azure_identity import get_default_credential
@@ -182,7 +183,7 @@ class AIFoundryService:
                                     ),
                                     "metadata": metadata,
                                     "document_text": text[:16000],
-                                    "extracted_expense": extracted_expense.model_dump() if extracted_expense else None,
+                                    "extracted_expense": self._json_value(extracted_expense) if extracted_expense else None,
                                 }
                             ),
                         },
@@ -192,7 +193,7 @@ class AIFoundryService:
                 payload["provider_status"] = "azure-ai-foundry"
                 payload["raw_response"] = payload
                 if extracted_expense and not payload.get("extracted_expense"):
-                    payload["extracted_expense"] = extracted_expense.model_dump()
+                    payload["extracted_expense"] = self._json_value(extracted_expense)
                 return normalize_analysis_result(payload)
             except Exception as exc:  # pragma: no cover - network failure path
                 logger.warning("Azure AI Foundry analysis failed: %s", exc)
@@ -243,6 +244,10 @@ class AIFoundryService:
             summary="Fallback extraction based on OCR text patterns.",
             provider_status="fallback",
         )
+
+    @staticmethod
+    def _json_value(value):
+        return jsonable_encoder(value)
 
     @staticmethod
     def _field_value(field) -> str | None:

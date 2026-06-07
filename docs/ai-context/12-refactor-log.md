@@ -15,6 +15,8 @@ Latest major refactor:
 11. hardened frontend API URL building so `/api` base paths cannot turn into `/api/api/...` during login callbacks
 12. bundled Entra consent between the frontend SPA and backend API with known clients and pre-authorization, and added an admin-consent path for external customer tenants
 13. forced explicit account selection on Microsoft login so cached browser sessions do not silently reuse the wrong tenant user
+14. fixed document extraction persistence so Decimal invoice totals from Document Intelligence or Foundry do not trigger PostgreSQL JSON serialization errors
+15. corrected auth bootstrap so guest Microsoft accounts inside a real Entra tenant join that tenant workspace instead of being split into separate personal workspaces
 
 Intentional simplification kept:
 

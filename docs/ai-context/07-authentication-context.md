@@ -23,7 +23,8 @@ Role model:
 Bootstrap behavior:
 
 - one organization is created per Entra tenant ID for workforce accounts
-- one isolated workspace is created per personal Microsoft account
+- one isolated workspace is created per true Microsoft consumer-tenant account
+- guest Microsoft accounts invited into a workforce tenant stay inside that tenant workspace
 - the first user from a tenant becomes `org_admin`
 - platform admins can also be injected with `PLATFORM_ADMIN_EMAILS`
 - end users do not need pre-registration in the app; first successful sign-in bootstraps the account automatically

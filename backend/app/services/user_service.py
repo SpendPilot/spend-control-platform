@@ -48,20 +48,15 @@ def _personal_workspace_name(payload: dict, email: str) -> str:
     return f"{base_name} Workspace"
 
 
-def _is_personal_microsoft_account(payload: dict) -> bool:
+def _is_consumer_tenant_account(payload: dict) -> bool:
     tenant_id = str(payload.get("tid") or "").strip().lower()
     issuer = str(payload.get("iss") or "").strip().lower()
-    identity_provider = str(payload.get("idp") or "").strip().lower()
-    return (
-        tenant_id == MICROSOFT_CONSUMER_TENANT_ID
-        or "/consumers/" in issuer
-        or identity_provider in {"live.com", "9188040d-6c67-4c5b-b112-36a304b66dad"}
-    )
+    return tenant_id == MICROSOFT_CONSUMER_TENANT_ID or "/consumers/" in issuer
 
 
 def _organization_partition_key(payload: dict, email: str) -> str:
     tenant_id = str(payload.get("tid") or "local-dev-tenant").strip()
-    if not _is_personal_microsoft_account(payload):
+    if not _is_consumer_tenant_account(payload):
         return tenant_id
 
     stable_account_key = str(payload.get("oid") or payload.get("sub") or email.strip().lower())
@@ -151,7 +146,7 @@ def sync_user_context_from_claims(
     email = str(email).strip()
     original_tenant_id = str(payload.get("tid") or "local-dev-tenant")
     is_platform_admin = email.lower() in settings.platform_admin_emails_list
-    is_personal_account = _is_personal_microsoft_account(payload)
+    is_consumer_account = _is_consumer_tenant_account(payload)
     tenant_id = _organization_partition_key(payload, email)
     external_id = _external_id_from_claims(payload)
     user = db.query(User).filter(User.external_id == external_id).first()
@@ -176,7 +171,11 @@ def sync_user_context_from_claims(
 
     organization = db.query(Organization).filter(Organization.tenant_id == tenant_id).first()
     if organization is None:
-        org_name = _personal_workspace_name(payload, email) if is_personal_account else payload.get("tenant_name") or _org_name_from_email(email)
+        org_name = (
+            _personal_workspace_name(payload, email)
+            if is_consumer_account
+            else payload.get("tenant_name") or _org_name_from_email(email)
+        )
         organization = Organization(
             tenant_id=tenant_id,
             name=org_name,

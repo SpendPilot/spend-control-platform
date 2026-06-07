@@ -46,3 +46,14 @@ Document scan produces fallback results:
 - Verify Azure Document Intelligence endpoint
 - Verify Azure AI Foundry endpoint and deployment
 - Confirm managed identity has access
+
+Document scan or expense extraction returns `500 Internal Server Error` after OCR succeeds:
+
+- Check the documents-service logs for JSON serialization errors around extracted invoice totals
+- This repo now stores AI extraction payloads with JSON-safe encoding so `Decimal` invoice totals do not break PostgreSQL JSON columns
+- If the failure returns after a deploy, confirm the latest backend image rolled out successfully in AKS
+
+Guest Microsoft account creates a different workspace than a native user in the same Entra tenant:
+
+- Guest accounts such as `name_example.com#EXT#@tenant.onmicrosoft.com` should join the tenant workspace, not a separate personal workspace
+- If they are being split out, verify the backend is running the latest auth bootstrap code that only isolates true consumer-tenant tokens

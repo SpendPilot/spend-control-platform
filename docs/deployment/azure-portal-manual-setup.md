@@ -98,7 +98,8 @@ Important:
 - use the `common` authority in the frontend configuration
 - set the frontend API scope to `<backend Application ID URI>/access_as_user`
 - customer-company users still group by their Entra tenant
-- personal Microsoft accounts get one isolated workspace each
+- direct personal Microsoft-account sign-ins get one isolated workspace each
+- guest Microsoft accounts invited into a customer Entra tenant stay in that tenant workspace
 - end users do not need to be pre-registered in the app database
 - first successful browser sign-in bootstraps the app-side account automatically
 - customer tenants may still require tenant-admin consent if their Entra policies block user consent

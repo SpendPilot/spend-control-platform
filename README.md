@@ -82,7 +82,8 @@ helm template spend-control infra/helm/business-ai-app
 Authentication note:
 
 - Work or school accounts are grouped by their Entra tenant ID.
-- Personal Microsoft accounts sign in through the same `common` authority and get their own isolated workspace.
+- Personal Microsoft accounts that sign in directly through the Microsoft consumer tenant get their own isolated workspace.
+- Guest Microsoft accounts invited into a company Entra tenant stay inside that tenant workspace instead of creating a second personal workspace.
 - The frontend must request the API scope using the backend Application ID URI, not the backend client ID.
 
 ## AI context

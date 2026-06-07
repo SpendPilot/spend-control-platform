@@ -39,7 +39,10 @@ Customer tenant onboarding does not require the user to be pre-created inside th
 - The Terraform output `entra_admin_consent_url_template` gives the tenant-admin consent URL pattern for external customer tenants.
 - Tenant-side app role assignment is optional in this repo because the app can also manage tenant roles internally after bootstrap.
 
-Personal Microsoft accounts are also supported. The application creates one isolated workspace per personal Microsoft account so consumer users do not collapse into the shared Microsoft consumer tenant.
+Personal Microsoft accounts are also supported.
+
+- A true Microsoft consumer-tenant sign-in gets one isolated workspace per personal account so consumer users do not collapse into the shared Microsoft consumer tenant.
+- A guest Microsoft account invited into a workforce tenant stays in that workforce tenant workspace and follows that tenant's role model.
 
 The app uses delegated user access, not a broad application identity for end-user finance actions:
 

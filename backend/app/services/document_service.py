@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from fastapi import HTTPException, UploadFile, status
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.rbac import ORG_READ_ROLES
@@ -130,7 +131,7 @@ class DocumentService:
         document.metadata_json = {
             **(document.metadata_json or {}),
             "extractor": extraction.extractor,
-            "extracted_expense": extracted_expense.model_dump() if extracted_expense else None,
+            "extracted_expense": self._json_value(extracted_expense) if extracted_expense else None,
         }
 
         analysis = self.ai_service.analyze_document(
@@ -148,12 +149,12 @@ class DocumentService:
             requested_by_user_id=principal.user_id,
             risk_level=analysis.risk_level,
             summary=analysis.summary,
-            findings_json=[finding.model_dump() for finding in analysis.findings],
+            findings_json=[self._json_value(finding) for finding in analysis.findings],
             recommendations_json=analysis.recommendations,
             provider_status=analysis.provider_status,
             raw_response_json={
-                "analysis": analysis.raw_response,
-                "extracted_expense": analysis.extracted_expense.model_dump() if analysis.extracted_expense else None,
+                "analysis": self._json_value(analysis.raw_response),
+                "extracted_expense": self._json_value(analysis.extracted_expense) if analysis.extracted_expense else None,
             },
         )
         document.status = "scanned"
@@ -186,7 +187,7 @@ class DocumentService:
         )
         document.metadata_json = {
             **(document.metadata_json or {}),
-            "extracted_expense": extracted.model_dump(),
+            "extracted_expense": self._json_value(extracted),
         }
         db.commit()
         db.refresh(document)
@@ -201,6 +202,10 @@ class DocumentService:
 
     def analyze_text(self, text: str, metadata: dict) -> DocumentAnalysisResult:
         return self.ai_service.analyze_document(text, metadata)
+
+    @staticmethod
+    def _json_value(value):
+        return jsonable_encoder(value)
 
     @staticmethod
     def _to_scan_out(scan: DocumentScan) -> DocumentScanOut:

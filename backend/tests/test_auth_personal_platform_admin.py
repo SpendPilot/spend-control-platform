@@ -27,6 +27,28 @@ def _consumer_payload(email: str) -> dict:
     }
 
 
+def _guest_personal_payload(
+    email: str,
+    oid: str,
+    *,
+    tenant_id: str = "11111111-2222-3333-4444-555555555555",
+) -> dict:
+    now = datetime.now(UTC)
+    return {
+        "tid": tenant_id,
+        "oid": oid,
+        "sub": f"sub-{oid}",
+        "email": email,
+        "preferred_username": email,
+        "name": "Guest User",
+        "idp": "live.com",
+        "iss": f"https://login.microsoftonline.com/{tenant_id}/v2.0",
+        "iat": int(now.timestamp()),
+        "exp": int((now + timedelta(hours=1)).timestamp()),
+        "sid": f"sid-{oid}",
+    }
+
+
 def test_personal_account_bootstraps_isolated_workspace(monkeypatch) -> None:
     monkeypatch.setenv("PLATFORM_ADMIN_EMAILS", "owner@outlook.com")
     get_settings.cache_clear()
@@ -82,3 +104,47 @@ def test_personal_accounts_do_not_share_the_consumer_tenant_workspace(monkeypatc
 
     os.environ.pop("PLATFORM_ADMIN_EMAILS", None)
     get_settings.cache_clear()
+
+
+def test_guest_personal_account_in_org_tenant_joins_tenant_workspace(monkeypatch) -> None:
+    monkeypatch.delenv("PLATFORM_ADMIN_EMAILS", raising=False)
+    get_settings.cache_clear()
+    tenant_id = "99999999-8888-7777-6666-555555555555"
+
+    with SessionLocal() as db:
+        native = sync_user_context_from_claims(
+            db,
+            {
+                "tid": tenant_id,
+                "oid": "oid-native",
+                "sub": "sub-native",
+                "email": "admin@abccompany.com",
+                "preferred_username": "admin@abccompany.com",
+                "name": "Admin",
+                "iss": f"https://login.microsoftonline.com/{tenant_id}/v2.0",
+                "iat": int(datetime.now(UTC).timestamp()),
+                "exp": int((datetime.now(UTC) + timedelta(hours=1)).timestamp()),
+                "sid": "sid-native",
+            },
+            session_fingerprint="fingerprint-native",
+            session_identifier="session-native",
+            auth_provider="entra",
+            user_agent="pytest",
+        )
+        guest = sync_user_context_from_claims(
+            db,
+            _guest_personal_payload(
+                "lijazsalim_gmail.com#EXT#@lijazsalimgmail.onmicrosoft.com",
+                "oid-guest",
+                tenant_id=tenant_id,
+            ),
+            session_fingerprint="fingerprint-guest",
+            session_identifier="session-guest",
+            auth_provider="entra",
+            user_agent="pytest",
+        )
+
+    assert native.organization.id == guest.organization.id
+    assert native.organization.tenant_id == tenant_id
+    assert guest.organization.tenant_id == tenant_id
+    assert guest.membership.role == "employee"
