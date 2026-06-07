@@ -1,146 +1,82 @@
 services:
   postgres:
     image: postgres:16
+    container_name: spend-control-postgres
     environment:
+      POSTGRES_DB: ${POSTGRES_DB:-spendcontrol}
       POSTGRES_USER: ${POSTGRES_USER:-spendcontrol}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spendcontrol}
-      POSTGRES_DB: ${POSTGRES_DB:-spend_control}
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-spendcontrol} -d ${POSTGRES_DB:-spend_control}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-spendcontrol} -d ${POSTGRES_DB:-spendcontrol}"]
       interval: 10s
       timeout: 5s
       retries: 10
 
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    healthcheck:
-      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  expense-service:
+  platform-api:
     build:
-      context: ../spend-control-expense-service
-      dockerfile: Dockerfile
+      context: ./backend
+    container_name: spend-control-platform-api
     environment:
-      APP_ENV: development
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}}
-      CORS_ORIGINS: http://localhost:3000
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
-      UPLOAD_DIR: /data/uploads
-    depends_on:
-      postgres:
-        condition: service_healthy
-    ports:
-      - "8001:8001"
-    volumes:
-      - uploads-data:/data/uploads
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-
-  ai-service:
-    build:
-      context: ../spend-control-ai-service
-      dockerfile: Dockerfile
-    environment:
-      APP_ENV: development
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}}
-      CORS_ORIGINS: http://localhost:3000
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      ollama:
-        condition: service_started
-    ports:
-      - "8002:8002"
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-
-  control-service:
-    build:
-      context: ../spend-control-control-service
-      dockerfile: Dockerfile
-    environment:
-      APP_ENV: development
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}}
-      CORS_ORIGINS: http://localhost:3000
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
-      EXPENSE_SERVICE_URL: http://expense-service:8001
-      AI_SERVICE_URL: http://ai-service:8002
-      RECEIPT_REQUIRED_THRESHOLD: ${RECEIPT_REQUIRED_THRESHOLD:-75}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      expense-service:
-        condition: service_healthy
-      ai-service:
-        condition: service_healthy
+      SERVICE_NAME: ${SERVICE_NAME:-platform-api}
+      APP_ENV: ${APP_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spendcontrol}}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:3000}
+      AUTH_MODE: ${AUTH_MODE:-dev-local}
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID:-}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID:-}
+      ENTRA_FRONTEND_CLIENT_ID: ${ENTRA_FRONTEND_CLIENT_ID:-}
+      ENTRA_BACKEND_CLIENT_ID: ${ENTRA_BACKEND_CLIENT_ID:-}
+      ENTRA_BACKEND_AUDIENCE: ${ENTRA_BACKEND_AUDIENCE:-}
+      ENTRA_AUTHORITY: ${ENTRA_AUTHORITY:-}
+      ENTRA_ALLOWED_TENANT_IDS: ${ENTRA_ALLOWED_TENANT_IDS:-}
+      PLATFORM_ADMIN_EMAILS: ${PLATFORM_ADMIN_EMAILS:-}
+      DEV_AUTH_SECRET: ${DEV_AUTH_SECRET:-dev-only-secret-change-me}
+      DEV_AUTH_DEFAULT_EMAIL: ${DEV_AUTH_DEFAULT_EMAIL:-developer@local.test}
+      DEV_AUTH_DEFAULT_NAME: ${DEV_AUTH_DEFAULT_NAME:-Local Developer}
+      DEV_AUTH_DEFAULT_ROLE: ${DEV_AUTH_DEFAULT_ROLE:-org_admin}
+      AZURE_AI_FOUNDRY_ENDPOINT: ${AZURE_AI_FOUNDRY_ENDPOINT:-}
+      AZURE_AI_PROJECT_ENDPOINT: ${AZURE_AI_PROJECT_ENDPOINT:-}
+      AZURE_AI_MODEL_DEPLOYMENT: ${AZURE_AI_MODEL_DEPLOYMENT:-}
+      AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: ${AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:-}
+      AZURE_STORAGE_ACCOUNT_URL: ${AZURE_STORAGE_ACCOUNT_URL:-}
+      AZURE_STORAGE_CONTAINER_NAME: ${AZURE_STORAGE_CONTAINER_NAME:-}
+      FINANCE_DEFAULT_CURRENCY: ${FINANCE_DEFAULT_CURRENCY:-INR}
+      LOCAL_UPLOAD_DIR: /app/data/uploads
     ports:
       - "8000:8000"
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-      interval: 15s
-      timeout: 5s
-      retries: 10
-
-  seed:
-    build:
-      context: ../spend-control-control-service
-      dockerfile: Dockerfile
-    environment:
-      APP_ENV: development
-      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-spendcontrol}:${POSTGRES_PASSWORD:-spendcontrol}@postgres:5432/${POSTGRES_DB:-spend_control}}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-change-me}
+    volumes:
+      - backend-data:/app/data
     depends_on:
-      control-service:
+      postgres:
         condition: service_healthy
-      expense-service:
-        condition: service_healthy
-      ai-service:
-        condition: service_healthy
-    command: ["python", "/app/scripts/seed_demo.py"]
 
   frontend:
     build:
-      context: ../spend-control-frontend
-      dockerfile: Dockerfile
+      context: ./frontend
       args:
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+        NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-dev-local}
+        NEXT_PUBLIC_ENTRA_FRONTEND_CLIENT_ID: ${NEXT_PUBLIC_ENTRA_FRONTEND_CLIENT_ID:-}
+        NEXT_PUBLIC_ENTRA_BACKEND_CLIENT_ID: ${NEXT_PUBLIC_ENTRA_BACKEND_CLIENT_ID:-}
+        NEXT_PUBLIC_ENTRA_API_SCOPE: ${NEXT_PUBLIC_ENTRA_API_SCOPE:-}
+        NEXT_PUBLIC_ENTRA_AUTHORITY: ${NEXT_PUBLIC_ENTRA_AUTHORITY:-}
+    container_name: spend-control-frontend
     environment:
-      NODE_ENV: ${NODE_ENV:-development}
-      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-}
-    depends_on:
-      control-service:
-        condition: service_healthy
-      seed:
-        condition: service_completed_successfully
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000}
+      NEXT_PUBLIC_AUTH_MODE: ${NEXT_PUBLIC_AUTH_MODE:-dev-local}
+      NEXT_PUBLIC_ENTRA_FRONTEND_CLIENT_ID: ${NEXT_PUBLIC_ENTRA_FRONTEND_CLIENT_ID:-}
+      NEXT_PUBLIC_ENTRA_BACKEND_CLIENT_ID: ${NEXT_PUBLIC_ENTRA_BACKEND_CLIENT_ID:-}
+      NEXT_PUBLIC_ENTRA_API_SCOPE: ${NEXT_PUBLIC_ENTRA_API_SCOPE:-}
+      NEXT_PUBLIC_ENTRA_AUTHORITY: ${NEXT_PUBLIC_ENTRA_AUTHORITY:-}
     ports:
       - "3000:3000"
-    healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
-      interval: 20s
-      timeout: 5s
-      retries: 10
+    depends_on:
+      - platform-api
 
 volumes:
   postgres-data:
-  uploads-data:
-  ollama-data:
+  backend-data:

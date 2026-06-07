@@ -23,7 +23,6 @@ resource "azurerm_kubernetes_cluster" "this" {
     max_count            = var.system_node_max_count
     vnet_subnet_id       = var.system_subnet_id
     orchestrator_version = var.kubernetes_version
-    zones                = var.zones
     max_pods             = 50
 
     upgrade_settings {
@@ -55,38 +54,18 @@ resource "azurerm_kubernetes_cluster" "this" {
       authorized_ip_ranges = var.authorized_ip_ranges
     }
   }
-
-  ingress_application_gateway {
-    gateway_id = var.application_gateway_id
-  }
 }
 
-resource "azurerm_kubernetes_cluster_node_pool" "frontend" {
-  name                  = "front"
+resource "azurerm_kubernetes_cluster_node_pool" "apps" {
+  name                  = "apps"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
-  vm_size               = var.frontend_node_vm_size
+  vm_size               = var.user_node_vm_size
   mode                  = "User"
   auto_scaling_enabled  = true
-  min_count             = var.frontend_node_min_count
-  max_count             = var.frontend_node_max_count
-  vnet_subnet_id        = var.frontend_subnet_id
+  min_count             = var.user_node_min_count
+  max_count             = var.user_node_max_count
+  vnet_subnet_id        = var.user_subnet_id
   orchestrator_version  = var.kubernetes_version
-  zones                 = var.zones
-  max_pods              = 50
-  tags                  = var.tags
-}
-
-resource "azurerm_kubernetes_cluster_node_pool" "backend" {
-  name                  = "back"
-  kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
-  vm_size               = var.backend_node_vm_size
-  mode                  = "User"
-  auto_scaling_enabled  = true
-  min_count             = var.backend_node_min_count
-  max_count             = var.backend_node_max_count
-  vnet_subnet_id        = var.backend_subnet_id
-  orchestrator_version  = var.kubernetes_version
-  zones                 = var.zones
   max_pods              = 50
   tags                  = var.tags
 }

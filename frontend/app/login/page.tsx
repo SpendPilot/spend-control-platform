@@ -1,0 +1,88 @@
+"use client";
+
+import { useEffect } from "react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+import { useAuth } from "@/components/auth-provider";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const { authMode, error, login, devLogin, ready, token } = useAuth();
+
+  useEffect(() => {
+    if (ready && token) {
+      router.push("/dashboard");
+    }
+  }, [ready, token, router]);
+
+  return (
+    <main className="flex min-h-screen items-center justify-center px-6 py-12">
+      <div className="grid w-full max-w-6xl gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+        <section className="panel panel-grid relative overflow-hidden p-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-sky-500/10 via-transparent to-orange-500/10" />
+          <div className="relative space-y-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-700 dark:text-sky-200">
+              <ShieldCheck className="h-4 w-4" />
+              Microsoft Entra ID with Azure finance workflows and AI document extraction
+            </span>
+            <div className="space-y-4">
+              <h1 className="font-display text-5xl leading-tight text-slate-950 dark:text-white">
+                Spend Control Platform
+              </h1>
+              <p className="max-w-2xl text-lg text-slate-600 dark:text-slate-300">
+                One finance workspace for budgets, expenses, approvals, and invoice intelligence without backend sprawl.
+              </p>
+            </div>
+          </div>
+        </section>
+        <section className="panel p-8">
+          <div className="mb-8">
+            <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Access</p>
+            <h2 className="mt-2 font-display text-3xl">
+              {authMode === "dev-local" ? "Enter local development mode" : "Sign in with Microsoft"}
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => void login()}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 font-medium text-white transition hover:bg-sky-600 dark:bg-white dark:text-slate-950"
+            >
+              {authMode === "dev-local" ? "Use local developer profile" : "Continue with Microsoft"}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+
+            {authMode === "dev-local" ? (
+              <button
+                type="button"
+                onClick={() =>
+                  void devLogin({
+                    email: "reviewer@local.test",
+                    display_name: "Local Reviewer",
+                    role: "org_admin",
+                  }).then(() => router.push("/dashboard"))
+                }
+                className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 px-4 py-3 text-sm font-medium dark:border-slate-700"
+              >
+                Seed an organization admin session
+              </button>
+            ) : null}
+          </div>
+
+          {error ? (
+            <div className="mt-6 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200">
+              {error}
+            </div>
+          ) : null}
+
+          <div className="mt-8 rounded-2xl bg-slate-100 p-4 text-sm text-slate-600 dark:bg-slate-800/70 dark:text-slate-300">
+            Auth mode:
+            <div className="mt-2 font-medium">{authMode}</div>
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}

@@ -10,14 +10,6 @@ output "aks_cluster_id" {
   value = module.aks_cluster.id
 }
 
-output "app_gateway_public_ip" {
-  value = module.app_gateway.public_ip_address
-}
-
-output "app_gateway_id" {
-  value = module.app_gateway.id
-}
-
 output "acr_login_server" {
   value = module.container_registry.login_server
 }
@@ -26,6 +18,38 @@ output "postgres_fqdn" {
   value = module.postgres.fqdn
 }
 
-output "vnet_name" {
-  value = module.network.virtual_network_name
+output "frontdoor_endpoint_hostname" {
+  value = azurerm_cdn_frontdoor_endpoint.this.host_name
+}
+
+output "frontend_login_url" {
+  value = "https://${azurerm_cdn_frontdoor_endpoint.this.host_name}/login"
+}
+
+output "backend_api_audience" {
+  value = local.backend_audience
+}
+
+output "frontend_client_id" {
+  value = azuread_application.frontend_spa.client_id
+}
+
+output "backend_client_id" {
+  value = azuread_application.backend_api.client_id
+}
+
+output "workload_identity_client_id" {
+  value = azurerm_user_assigned_identity.workload.client_id
+}
+
+output "storage_account_url" {
+  value = azurerm_storage_account.documents.primary_blob_endpoint
+}
+
+output "document_intelligence_endpoint" {
+  value = azurerm_cognitive_account.document_intelligence.endpoint
+}
+
+output "foundry_endpoint" {
+  value = azurerm_cognitive_account.foundry.endpoint
 }

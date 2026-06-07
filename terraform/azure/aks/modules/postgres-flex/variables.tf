@@ -55,12 +55,12 @@ variable "zone" {
 
 variable "ha_mode" {
   type    = string
-  default = "ZoneRedundant"
+  default = "Disabled"
 }
 
 variable "ha_standby_zone" {
   type    = string
-  default = "2"
+  default = null
 }
 
 variable "database_name" {
