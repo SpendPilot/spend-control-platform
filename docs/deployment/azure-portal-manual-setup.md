@@ -89,7 +89,7 @@ Create two app registrations:
    - set access token version to `2`
    - create app roles if you want tenant-side role assignment
 
-Grant admin consent after both apps are configured.
+Grant admin consent after both apps are configured in your home tenant.
 
 Important:
 
@@ -97,6 +97,9 @@ Important:
 - set the frontend API scope to `<backend Application ID URI>/access_as_user`
 - customer-company users still group by their Entra tenant
 - personal Microsoft accounts get one isolated workspace each
+- end users do not need to be pre-registered in the app database
+- first successful browser sign-in bootstraps the app-side account automatically
+- customer tenants may still require tenant-admin consent if their Entra policies block user consent
 
 ## Images and registry
 
@@ -140,5 +143,6 @@ Use these checks after the portal build:
 - `kubectl get gateway,httproute,svc -n spend-control` shows the gateway programmed
 - the gateway public IP returns `200 OK`
 - the Front Door hostname returns the frontend after propagation
+- a first-time user can finish the browser consent flow and then `GET /api/auth/me` returns JSON instead of `401 Invalid access token`
 
 If Front Door keeps returning the Azure error page with `X-Cache: CONFIG_NOCACHE` for more than roughly 45 minutes while the gateway public IP is healthy, treat it as an Azure Front Door propagation issue and escalate through Azure support.

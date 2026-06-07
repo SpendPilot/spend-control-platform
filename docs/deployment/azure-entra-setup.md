@@ -27,6 +27,11 @@ Frontend SPA registration:
 - local redirect URI for `http://localhost:3000/login`
 - Front Door login redirect URI based on the deployed endpoint hostname
 
-Customer tenant onboarding still requires tenant admin consent and role assignment in the customer tenant because this is a multi-tenant SaaS model.
+Customer tenant onboarding does not require the user to be pre-created inside the app database.
+
+- The first successful browser sign-in bootstraps the user automatically.
+- If the customer's Entra tenant allows user consent, a normal user can complete the first sign-in flow.
+- If the customer's Entra tenant blocks user consent, a tenant admin must grant consent to the Enterprise Application first.
+- Tenant-side app role assignment is optional in this repo because the app can also manage tenant roles internally after bootstrap.
 
 Personal Microsoft accounts are also supported. The application creates one isolated workspace per personal Microsoft account so consumer users do not collapse into the shared Microsoft consumer tenant.

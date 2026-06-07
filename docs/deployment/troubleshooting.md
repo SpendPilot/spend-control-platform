@@ -33,6 +33,7 @@ Backend token validation fails:
 - Confirm the frontend requested the backend scope
 - The backend accepts the configured Application ID URI plus both client-ID audience forms (`<client-id>` and `api://<client-id>`) to support Microsoft identity platform v2 tokens across personal and organizational accounts
 - Users do not need to be pre-registered in the app; after Entra consent, a first-time sign-in should bootstrap the user automatically
+- Browser sign-in consent for the frontend app does not automatically grant Azure CLI consent to call the same API; CLI-based token tests may require a separate `az login --scope <api-scope>` flow
 
 Document scan produces fallback results:
 
