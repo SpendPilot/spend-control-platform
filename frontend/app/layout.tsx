@@ -23,25 +23,10 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const runtimeConfig = {
-    apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "/api",
-    authMode: process.env.NEXT_PUBLIC_AUTH_MODE || "entra",
-    entraFrontendClientId: process.env.NEXT_PUBLIC_ENTRA_FRONTEND_CLIENT_ID || "",
-    entraBackendClientId: process.env.NEXT_PUBLIC_ENTRA_BACKEND_CLIENT_ID || "",
-    entraApiScope: process.env.NEXT_PUBLIC_ENTRA_API_SCOPE || "",
-    entraAuthority: process.env.NEXT_PUBLIC_ENTRA_AUTHORITY || "",
-  };
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${sans.variable} ${display.variable} font-sans antialiased`}>
-        <Script
-          id="runtime-config"
-          strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `window.__APP_CONFIG__ = ${JSON.stringify(runtimeConfig)};`,
-          }}
-        />
+        <Script id="runtime-config" src="/runtime-config" strategy="beforeInteractive" />
         <Providers>{children}</Providers>
       </body>
     </html>

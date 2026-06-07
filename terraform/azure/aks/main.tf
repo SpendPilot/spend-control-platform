@@ -325,7 +325,7 @@ resource "terraform_data" "build_backend_image" {
   triggers_replace = {
     image_tag  = var.image_tag
     dockerfile = filesha256("${path.root}/../../../backend/Dockerfile")
-    source     = filesha256("${path.root}/../../../backend/pyproject.toml")
+    source     = local.backend_source_hash
   }
 
   provisioner "local-exec" {
@@ -342,7 +342,7 @@ resource "terraform_data" "build_frontend_image" {
   triggers_replace = {
     image_tag  = var.image_tag
     dockerfile = filesha256("${path.root}/../../../frontend/Dockerfile")
-    source     = filesha256("${path.root}/../../../frontend/package.json")
+    source     = local.frontend_source_hash
   }
 
   provisioner "local-exec" {
@@ -425,32 +425,35 @@ resource "helm_release" "application" {
         name   = var.service_account_name
       }
       imagePullSecrets = []
+      rollout = {
+        revision = local.application_rollout_revision
+      }
       frontend = {
         image = {
           repository = local.frontend_repo
           tag        = var.image_tag
-          pullPolicy = "IfNotPresent"
+          pullPolicy = var.image_tag == "latest" ? "Always" : "IfNotPresent"
         }
       }
       identityService = {
         image = {
           repository = local.backend_repo
           tag        = var.image_tag
-          pullPolicy = "IfNotPresent"
+          pullPolicy = var.image_tag == "latest" ? "Always" : "IfNotPresent"
         }
       }
       financeService = {
         image = {
           repository = local.backend_repo
           tag        = var.image_tag
-          pullPolicy = "IfNotPresent"
+          pullPolicy = var.image_tag == "latest" ? "Always" : "IfNotPresent"
         }
       }
       documentsService = {
         image = {
           repository = local.backend_repo
           tag        = var.image_tag
-          pullPolicy = "IfNotPresent"
+          pullPolicy = var.image_tag == "latest" ? "Always" : "IfNotPresent"
         }
       }
       migrationJob = {
@@ -458,7 +461,7 @@ resource "helm_release" "application" {
         image = {
           repository = local.backend_repo
           tag        = var.image_tag
-          pullPolicy = "IfNotPresent"
+          pullPolicy = var.image_tag == "latest" ? "Always" : "IfNotPresent"
         }
       }
       env = {

@@ -17,6 +17,9 @@ serviceAccount:
 
 imagePullSecrets: []
 
+rollout:
+  revision: ""
+
 frontend:
   image:
     repository: spendcontrol/frontend

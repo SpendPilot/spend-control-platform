@@ -1,5 +1,13 @@
 # Frontend context
 
+Runtime auth configuration must come from the deployed container environment, not from Next.js build-time inlined `NEXT_PUBLIC_*` values.
+
+Current pattern:
+
+- the frontend loads `/runtime-config` before interactive hydration
+- `/runtime-config` is a Next.js route handler that reads runtime env vars from the container
+- `window.__APP_CONFIG__` is the primary client-side config source for Entra and API routing
+
 The frontend lives in `frontend/` and is the finance workspace for the platform.
 
 Pages now kept:

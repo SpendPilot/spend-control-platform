@@ -8,6 +8,19 @@ locals {
 
   backend_audience = "api://${local.name}-api"
   frontend_host    = azurerm_cdn_frontdoor_endpoint.this.host_name
+  backend_source_hash = sha256(
+    join(
+      ",",
+      [for file in sort(fileset("${path.root}/../../../backend", "**")) : filesha256("${path.root}/../../../backend/${file}")],
+    ),
+  )
+  frontend_source_hash = sha256(
+    join(
+      ",",
+      [for file in sort(fileset("${path.root}/../../../frontend", "**")) : filesha256("${path.root}/../../../frontend/${file}")],
+    ),
+  )
+  application_rollout_revision = sha256("${local.backend_source_hash}:${local.frontend_source_hash}:${var.image_tag}")
   frontend_redirect_uris = distinct(
     concat(
       var.frontend_redirect_uris,
