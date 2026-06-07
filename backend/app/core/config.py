@@ -63,6 +63,19 @@ class Settings(BaseSettings):
         return "api://spend-control-local"
 
     @property
+    def accepted_backend_audiences(self) -> list[str]:
+        candidates: list[str] = []
+        if self.entra_backend_client_id:
+            candidates.append(self.entra_backend_client_id)
+            candidates.append(f"api://{self.entra_backend_client_id}")
+        candidates.append(self.backend_audience)
+        deduped: list[str] = []
+        for candidate in candidates:
+            if candidate and candidate not in deduped:
+                deduped.append(candidate)
+        return deduped
+
+    @property
     def authority(self) -> str:
         if self.entra_authority:
             return self.entra_authority.rstrip("/")

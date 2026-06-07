@@ -31,6 +31,8 @@ Backend token validation fails:
 - Check `ENTRA_BACKEND_AUDIENCE`
 - Check `ENTRA_AUTHORITY`
 - Confirm the frontend requested the backend scope
+- The backend accepts the configured Application ID URI plus both client-ID audience forms (`<client-id>` and `api://<client-id>`) to support Microsoft identity platform v2 tokens across personal and organizational accounts
+- Users do not need to be pre-registered in the app; after Entra consent, a first-time sign-in should bootstrap the user automatically
 
 Document scan produces fallback results:
 

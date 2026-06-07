@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
@@ -19,6 +20,7 @@ from app.services.user_service import MICROSOFT_CONSUMER_TENANT_ID
 from app.services.user_service import sync_user_context_from_claims
 
 bearer_scheme = HTTPBearer(auto_error=False)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -73,7 +75,7 @@ class EntraTokenValidator:
             token,
             signing_key.key,
             algorithms=["RS256"],
-            audience=self.settings.backend_audience,
+            audience=self.settings.accepted_backend_audiences,
             options={"verify_iss": False},
         )
         self._validate_tenant_and_issuer(payload)
@@ -149,6 +151,13 @@ def _get_token_payload(token: str, settings: Settings) -> dict:
             return _decode_dev_token(token)
         return get_entra_validator().validate(token)
     except jwt.InvalidTokenError as exc:
+        logger.warning(
+            "Token validation failed for auth mode %s with accepted audiences %s and authority %s: %s",
+            settings.auth_mode,
+            settings.accepted_backend_audiences,
+            settings.authority,
+            exc,
+        )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid access token") from exc
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
