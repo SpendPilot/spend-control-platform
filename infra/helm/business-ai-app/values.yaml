@@ -9,6 +9,12 @@ gateway:
   listener:
     port: 80
     protocol: HTTP
+  tls:
+    enabled: false
+    port: 443
+    protocol: HTTPS
+    mode: Terminate
+    certificateSecretName: spend-control-gateway-origin-tls
 
 serviceAccount:
   create: true

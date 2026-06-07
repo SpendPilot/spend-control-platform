@@ -1,6 +1,6 @@
 # Terraform AKS Runbook
 
-Validated in Azure on June 7, 2026 against:
+Validated in Azure on June 8, 2026 against:
 
 - subscription `e1f5b4be-e0ba-4ccb-8708-a949458fcd83`
 - region `Central India` for AKS, PostgreSQL, Storage, Document Intelligence, and Front Door
@@ -26,10 +26,17 @@ This is the exact deployment path that was used to bring the environment up succ
 
 - AKS node pools use `Standard_D2s_v3`, not `Standard_D2s_v5`.
   The tested subscription had `0` vCPU quota for `Standard_DSv5` in `Central India`.
+- PostgreSQL uses `GP_Standard_D2s_v3` with `ZoneRedundant` HA and geo-redundant backup enabled.
+  The original `B_Standard_B2s` Burstable choice could not satisfy the approved HA target during a live apply.
 - Azure AI Foundry stays in `East US 2`.
   The tested `gpt-4.1-mini` pay-per-token deployment succeeded there, while the Central India probe did not.
 - kGateway is installed from the vendored chart under `infra/vendor/kgateway/`.
   This avoids OCI chart pull failures in restricted networks.
+- Front Door forwards to the origin with `HttpsOnly`, and the origin group health probe also uses `Https`.
+- The gateway `LoadBalancer` service exposes `80` and `443`.
+- The WAF policy includes a custom auth rate-limit rule on `/api/auth`.
+- Blob Storage defaults to OAuth auth for the application path and keeps local users disabled.
+  Shared-key auth remains enabled because the current AzureRM provider still uses it when managing queue properties.
 
 ## Prerequisites
 
@@ -128,10 +135,26 @@ curl.exe -I http://<gateway-public-ip>
 curl.exe http://<gateway-public-ip>/health
 ```
 
+Application health checks used in the validated run:
+
+```powershell
+curl.exe https://myfinagent.online/health
+curl.exe https://<frontdoor-default-domain>/runtime-config
+```
+
 Front Door check:
 
 ```powershell
 curl.exe -I https://<frontdoor-default-domain>
+```
+
+PostgreSQL posture check:
+
+```powershell
+az postgres flexible-server show `
+  -g <resource-group> `
+  -n <postgres-server-name> `
+  --query "{sku:sku.name,tier:sku.tier,ha:highAvailability.mode,geoBackup:backup.geoRedundantBackup,state:state}"
 ```
 
 ## Manual work after Terraform
@@ -143,9 +166,13 @@ Terraform does not manage these external steps:
 - assign customer users in their own Entra tenants after they consent to the app
 - if a customer tenant blocks user consent or has not onboarded the app yet, have a tenant admin open the `entra_admin_consent_url_template` output with their tenant ID filled in so Entra can create the external enterprise applications and service principals
 
+## Important change note
+
+The June 8, 2026 hardening pass uplifted PostgreSQL from the original Burstable SKU to `GP_Standard_D2s_v3` so HA plus geo-backup could succeed. In the validated environment that required destroying and recreating the PostgreSQL server and database, which reset application data in that environment.
+
 ## Front Door note
 
-After a successful apply, Front Door configuration can still take time to propagate globally. During validation on June 7, 2026:
+After a successful apply, Front Door configuration can still take time to propagate globally. During validation on June 8, 2026:
 
 - the gateway public IP returned `200 OK` immediately
 - the Front Door default hostname could still return a Front Door `404` during early propagation

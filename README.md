@@ -7,13 +7,13 @@ Current target runtime:
 ```txt
 User
   -> Azure Front Door Premium + WAF
-  -> kGateway on AKS
+  -> HTTPS origin to kGateway on AKS
   -> HTTPRoutes
       -> frontend
       -> identity-service
       -> finance-service
       -> documents-service
-  -> PostgreSQL Flexible Server
+  -> PostgreSQL Flexible Server (General Purpose, zone-redundant HA, geo-backup)
   -> Azure Blob Storage
   -> Azure AI Foundry
   -> Azure AI Document Intelligence
@@ -28,6 +28,7 @@ User
 - AI policy/risk summaries with Azure AI Foundry plus local fallback behavior
 - AKS deployment assets using Gateway API and kGateway
 - Terraform stack that bootstraps Azure, AKS, Entra app registrations, workload identity, Helm releases, and Front Door
+- Front Door edge hardening with HTTPS origin forwarding and auth rate limiting at WAF
 
 ## Repository layout
 
@@ -85,6 +86,13 @@ Authentication note:
 - Personal Microsoft accounts that sign in directly through the Microsoft consumer tenant get their own isolated workspace.
 - Guest Microsoft accounts invited into a company Entra tenant stay inside that tenant workspace instead of creating a second personal workspace.
 - The frontend must request the API scope using the backend Application ID URI, not the backend client ID.
+
+Current validated Azure posture:
+
+- Front Door forwards to the AKS gateway over `HTTPS`, not `HTTP`.
+- The gateway `LoadBalancer` service exposes both `80` and `443`, with the HTTPS listener terminated by a Terraform-managed origin certificate secret.
+- PostgreSQL now runs as `GP_Standard_D2s_v3` in `Central India` with `ZoneRedundant` HA and geo-redundant backup enabled.
+- Blob Storage defaults the account to OAuth auth for the application path, while shared-key auth remains enabled only so the current AzureRM/Terraform path can keep managing the account safely.
 
 ## AI context
 

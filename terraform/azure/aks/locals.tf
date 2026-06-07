@@ -1,10 +1,11 @@
 locals {
-  name          = lower("${var.prefix}-${var.environment}")
-  compact_name  = substr(replace(lower("${var.prefix}${var.environment}"), "-", ""), 0, 18)
-  alnum_name    = replace(local.name, "-", "")
-  rg_name       = var.resource_group_name
-  frontend_repo = "${module.container_registry.login_server}/spend-control-frontend"
-  backend_repo  = "${module.container_registry.login_server}/spend-control-backend"
+  name                           = lower("${var.prefix}-${var.environment}")
+  compact_name                   = substr(replace(lower("${var.prefix}${var.environment}"), "-", ""), 0, 18)
+  alnum_name                     = replace(local.name, "-", "")
+  rg_name                        = var.resource_group_name
+  frontend_repo                  = "${module.container_registry.login_server}/spend-control-frontend"
+  backend_repo                   = "${module.container_registry.login_server}/spend-control-backend"
+  gateway_origin_tls_secret_name = "spend-control-gateway-origin-tls"
 
   backend_audience = "api://${local.name}-api"
   frontend_host    = azurerm_cdn_frontdoor_endpoint.this.host_name

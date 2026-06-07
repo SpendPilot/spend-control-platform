@@ -17,6 +17,7 @@ variable "address_space" {
 variable "subnets" {
   type = map(object({
     address_prefixes   = list(string)
+    service_endpoints  = optional(list(string), [])
     delegation_name    = optional(string)
     delegation_service = optional(string)
     delegation_actions = optional(list(string), ["Microsoft.Network/virtualNetworks/subnets/join/action"])

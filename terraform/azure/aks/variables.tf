@@ -152,7 +152,31 @@ variable "postgres_version" {
 
 variable "postgres_sku_name" {
   type    = string
-  default = "B_Standard_B2s"
+  default = "GP_Standard_D2s_v3"
+}
+
+variable "postgres_zone" {
+  description = "Primary availability zone for PostgreSQL Flexible Server."
+  type        = string
+  default     = "1"
+}
+
+variable "postgres_ha_mode" {
+  description = "PostgreSQL high availability mode."
+  type        = string
+  default     = "ZoneRedundant"
+}
+
+variable "postgres_ha_standby_zone" {
+  description = "Standby availability zone for PostgreSQL high availability."
+  type        = string
+  default     = "2"
+}
+
+variable "postgres_geo_redundant_backup_enabled" {
+  description = "Enable geo-redundant backup for PostgreSQL Flexible Server."
+  type        = bool
+  default     = true
 }
 
 variable "postgres_storage_mb" {
@@ -186,6 +210,24 @@ variable "frontdoor_sku_name" {
   description = "Front Door SKU."
   type        = string
   default     = "Premium_AzureFrontDoor"
+}
+
+variable "frontdoor_origin_use_https" {
+  description = "Whether Front Door should forward traffic to the AKS gateway over HTTPS."
+  type        = bool
+  default     = true
+}
+
+variable "frontdoor_auth_rate_limit_threshold" {
+  description = "Per-minute threshold for authentication endpoint rate limiting at Front Door."
+  type        = number
+  default     = 60
+}
+
+variable "frontdoor_auth_rate_limit_duration_minutes" {
+  description = "Duration window in minutes for the authentication endpoint rate limit."
+  type        = number
+  default     = 1
 }
 
 variable "document_intelligence_sku" {

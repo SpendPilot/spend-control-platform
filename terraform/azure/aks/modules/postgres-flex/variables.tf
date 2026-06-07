@@ -48,6 +48,11 @@ variable "backup_retention_days" {
   default = 7
 }
 
+variable "geo_redundant_backup_enabled" {
+  type    = bool
+  default = false
+}
+
 variable "zone" {
   type    = string
   default = "1"

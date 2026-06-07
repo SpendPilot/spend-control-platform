@@ -43,6 +43,7 @@ module "network" {
     }
     "db-subnet" = {
       address_prefixes   = [var.db_subnet_cidr]
+      service_endpoints  = ["Microsoft.Storage"]
       delegation_name    = "postgres-flex"
       delegation_service = "Microsoft.DBforPostgreSQL/flexibleServers"
     }
@@ -52,19 +53,23 @@ module "network" {
 module "postgres" {
   source = "./modules/postgres-flex"
 
-  name                   = "${local.name}-pgsql"
-  resource_group_name    = module.resource_group.name
-  location               = module.resource_group.location
-  server_version         = var.postgres_version
-  delegated_subnet_id    = module.network.subnet_ids["db-subnet"]
-  virtual_network_id     = module.network.virtual_network_id
-  private_dns_zone_name  = "${local.name}.postgres.database.azure.com"
-  administrator_login    = var.postgres_admin_login
-  administrator_password = var.postgres_admin_password
-  storage_mb             = var.postgres_storage_mb
-  sku_name               = var.postgres_sku_name
-  database_name          = var.postgres_database_name
-  tags                   = local.tags
+  name                         = "${local.name}-pgsql"
+  resource_group_name          = module.resource_group.name
+  location                     = module.resource_group.location
+  server_version               = var.postgres_version
+  delegated_subnet_id          = module.network.subnet_ids["db-subnet"]
+  virtual_network_id           = module.network.virtual_network_id
+  private_dns_zone_name        = "${local.name}.postgres.database.azure.com"
+  administrator_login          = var.postgres_admin_login
+  administrator_password       = var.postgres_admin_password
+  storage_mb                   = var.postgres_storage_mb
+  sku_name                     = var.postgres_sku_name
+  zone                         = var.postgres_zone
+  ha_mode                      = var.postgres_ha_mode
+  ha_standby_zone              = var.postgres_ha_standby_zone
+  geo_redundant_backup_enabled = var.postgres_geo_redundant_backup_enabled
+  database_name                = var.postgres_database_name
+  tags                         = local.tags
 }
 
 module "aks_cluster" {
@@ -126,9 +131,13 @@ resource "azurerm_storage_account" "documents" {
   location                        = module.resource_group.location
   account_tier                    = "Standard"
   account_replication_type        = "LRS"
+  public_network_access_enabled   = true
+  https_traffic_only_enabled      = true
   min_tls_version                 = "TLS1_2"
   allow_nested_items_to_be_public = false
+  default_to_oauth_authentication = true
   shared_access_key_enabled       = true
+  local_user_enabled              = false
   tags                            = local.tags
 }
 
@@ -425,6 +434,71 @@ resource "kubernetes_namespace" "application" {
   }
 }
 
+resource "terraform_data" "gateway_origin_tls_secret" {
+  triggers_replace = {
+    cluster_name = module.aks_cluster.name
+    namespace    = var.namespace
+    secret_name  = local.gateway_origin_tls_secret_name
+  }
+
+  provisioner "local-exec" {
+    interpreter = ["PowerShell", "-Command"]
+    command     = <<-EOT
+      $tempDir = Join-Path $env:TEMP 'spend-control-gateway-origin-tls'
+      New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
+      $pfxPath = Join-Path $tempDir 'origin.pfx'
+      $certPemPath = Join-Path $tempDir 'tls.crt'
+      $keyPemPath = Join-Path $tempDir 'tls.key'
+      $password = ConvertTo-SecureString -String 'SpendControlOriginTls!2026' -Force -AsPlainText
+      $cert = New-SelfSignedCertificate -DnsName 'spend-control-gateway','spend-control-gateway.${var.namespace}','spend-control-gateway.${var.namespace}.svc','spend-control-gateway.${var.namespace}.svc.cluster.local' -CertStoreLocation 'Cert:\CurrentUser\My' -NotAfter (Get-Date).AddYears(1) -KeyExportPolicy Exportable
+      Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $password | Out-Null
+      @'
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.serialization import pkcs12
+from pathlib import Path
+import sys
+
+pfx_path = Path(sys.argv[1])
+password = sys.argv[2].encode("utf-8")
+cert_pem_path = Path(sys.argv[3])
+key_pem_path = Path(sys.argv[4])
+
+private_key, certificate, _ = pkcs12.load_key_and_certificates(pfx_path.read_bytes(), password)
+cert_pem_path.write_bytes(certificate.public_bytes(serialization.Encoding.PEM))
+key_pem_path.write_bytes(
+    private_key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.TraditionalOpenSSL,
+        serialization.NoEncryption(),
+    )
+)
+'@ | python - $pfxPath 'SpendControlOriginTls!2026' $certPemPath $keyPemPath
+      $certB64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($certPemPath))
+      $keyB64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($keyPemPath))
+      $remoteCommand = @"
+cat <<'EOF' | kubectl apply -f -
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${local.gateway_origin_tls_secret_name}
+  namespace: ${var.namespace}
+type: kubernetes.io/tls
+data:
+  tls.crt: $certB64
+  tls.key: $keyB64
+EOF
+"@
+      az aks command invoke --resource-group ${module.resource_group.name} --name ${module.aks_cluster.name} --command $remoteCommand | Out-Null
+      Remove-Item -Force $pfxPath, $certPemPath, $keyPemPath
+    EOT
+    environment = {
+      AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = "1"
+    }
+  }
+
+  depends_on = [kubernetes_namespace.application]
+}
+
 resource "helm_release" "application" {
   name             = "spend-control"
   chart            = "${path.root}/../../../infra/helm/business-ai-app"
@@ -438,6 +512,22 @@ resource "helm_release" "application" {
       namespace = {
         create = false
         name   = var.namespace
+      }
+      gateway = {
+        enabled   = true
+        className = "kgateway"
+        name      = "spend-control-gateway"
+        listener = {
+          port     = 80
+          protocol = "HTTP"
+        }
+        tls = {
+          enabled               = true
+          port                  = 443
+          protocol              = "HTTPS"
+          mode                  = "Terminate"
+          certificateSecretName = local.gateway_origin_tls_secret_name
+        }
       }
       serviceAccount = {
         create = true
@@ -523,6 +613,7 @@ resource "helm_release" "application" {
     azurerm_role_assignment.storage_blob_contributor,
     azurerm_role_assignment.docint_user,
     azurerm_role_assignment.foundry_user,
+    terraform_data.gateway_origin_tls_secret,
     terraform_data.build_backend_image,
     terraform_data.build_frontend_image,
   ]
@@ -550,7 +641,7 @@ resource "azurerm_cdn_frontdoor_origin_group" "this" {
   health_probe {
     interval_in_seconds = 30
     path                = "/health"
-    protocol            = "Http"
+    protocol            = var.frontdoor_origin_use_https ? "Https" : "Http"
     request_type        = "GET"
   }
 
@@ -595,6 +686,22 @@ resource "azurerm_cdn_frontdoor_firewall_policy" "this" {
     action  = "Block"
   }
 
+  custom_rule {
+    name                           = "AuthRateLimit"
+    enabled                        = true
+    priority                       = 1
+    type                           = "RateLimitRule"
+    action                         = "Block"
+    rate_limit_duration_in_minutes = var.frontdoor_auth_rate_limit_duration_minutes
+    rate_limit_threshold           = var.frontdoor_auth_rate_limit_threshold
+
+    match_condition {
+      match_variable = "RequestUri"
+      operator       = "BeginsWith"
+      match_values   = ["/api/auth"]
+    }
+  }
+
   tags = local.tags
 }
 
@@ -604,11 +711,15 @@ resource "azurerm_cdn_frontdoor_route" "this" {
   cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.this.id
   cdn_frontdoor_origin_ids      = [azurerm_cdn_frontdoor_origin.kgateway.id]
   enabled                       = true
-  forwarding_protocol           = "HttpOnly"
+  forwarding_protocol           = var.frontdoor_origin_use_https ? "HttpsOnly" : "HttpOnly"
   https_redirect_enabled        = true
   patterns_to_match             = ["/*"]
   supported_protocols           = ["Http", "Https"]
   link_to_default_domain        = true
+
+  lifecycle {
+    ignore_changes = [cdn_frontdoor_custom_domain_ids]
+  }
 }
 
 resource "azurerm_cdn_frontdoor_security_policy" "this" {

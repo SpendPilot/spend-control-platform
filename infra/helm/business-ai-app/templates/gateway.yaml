@@ -13,4 +13,17 @@ spec:
       allowedRoutes:
         namespaces:
           from: Same
+{{- if .Values.gateway.tls.enabled }}
+    - name: https
+      port: {{ .Values.gateway.tls.port }}
+      protocol: {{ .Values.gateway.tls.protocol }}
+      tls:
+        mode: {{ .Values.gateway.tls.mode }}
+        certificateRefs:
+          - kind: Secret
+            name: {{ .Values.gateway.tls.certificateSecretName }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+{{- end }}
 {{- end }}

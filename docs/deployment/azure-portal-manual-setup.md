@@ -2,7 +2,7 @@
 
 This guide is the portal-first fallback when you do not want to rely on Terraform for the Azure control plane.
 
-It was updated after a live deployment validation on June 7, 2026 and reflects the working topology in this repository.
+It was updated after a live deployment validation on June 8, 2026 and reflects the working topology in this repository.
 
 ## Target architecture
 
@@ -50,13 +50,26 @@ Managed identity:
 - create one user-assigned identity for the workloads
 - grant it:
   - `Storage Blob Data Contributor` on the storage account
-  - `Cognitive Services User` on the Foundry account
+  - `Cognitive Services OpenAI User` on the Foundry account
   - `Cognitive Services User` on the Document Intelligence account
 
 PostgreSQL:
 
 - use private access in the delegated subnet
 - keep the app connection on SSL
+- use a General Purpose SKU that supports HA in your region
+- validated working shape in this repo:
+  - SKU: `Standard_D2s_v3` under the General Purpose tier
+  - primary zone: `1`
+  - standby zone: `2`
+  - HA: `ZoneRedundant`
+  - geo-redundant backup: `Enabled`
+
+Storage:
+
+- set default authentication to OAuth
+- disable local users
+- if you need the same Terraform/AzureRM behavior used in this repo, keep shared-key auth enabled even though the application itself uses managed identity
 
 Foundry:
 
@@ -67,9 +80,17 @@ Front Door:
 
 - SKU: Premium
 - WAF: attach to the endpoint
-- origin protocol: HTTP to the AKS gateway LoadBalancer
+- origin protocol: HTTPS to the AKS gateway LoadBalancer
+- health probe protocol: HTTPS
 - health probe path: `/health`
 - route pattern: `/*`
+- add a custom WAF rate-limit rule for `/api/auth`
+
+Gateway:
+
+- expose both port `80` and port `443` on the public `LoadBalancer` service
+- add a TLS listener on `443`
+- a self-signed origin certificate is acceptable for this topology if Front Door origin certificate name checks remain disabled
 
 ## Manual Entra setup
 
@@ -147,6 +168,7 @@ Use these checks after the portal build:
 - `kubectl get gateway,httproute,svc -n spend-control` shows the gateway programmed
 - the gateway public IP returns `200 OK`
 - the Front Door hostname returns the frontend after propagation
+- `https://myfinagent.online/health` returns the identity health payload
 - a first-time user can finish the browser consent flow and then `GET /api/auth/me` returns JSON instead of `401 Invalid access token`
 - if a customer tenant sees `AADSTS650052`, a tenant admin must use the admin-consent URL for that tenant so Entra creates the frontend and backend enterprise applications there
 
