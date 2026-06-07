@@ -12,6 +12,7 @@ Latest major refactor:
 8. updated README, deployment docs, and AI context files
 9. corrected Entra API scope wiring to use the backend Application ID URI
 10. refactored auth bootstrap so personal Microsoft accounts get isolated workspaces instead of being rejected or merged together
+11. hardened frontend API URL building so `/api` base paths cannot turn into `/api/api/...` during login callbacks
 
 Intentional simplification kept:
 

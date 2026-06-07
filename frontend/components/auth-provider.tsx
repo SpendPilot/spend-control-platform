@@ -7,6 +7,7 @@ import {
   type AuthenticationResult,
 } from "@azure/msal-browser";
 
+import { readErrorMessage } from "@/lib/api";
 import { buildApiUrl } from "@/lib/contracts";
 import { getRuntimeConfig } from "@/lib/runtime-config";
 
@@ -80,7 +81,7 @@ function getMsalApp() {
 }
 
 async function fetchCurrentProfile(token: string) {
-  const response = await fetch(buildApiUrl("/api/auth/me"), {
+  const response = await fetch(buildApiUrl("/auth/me"), {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -88,7 +89,7 @@ async function fetchCurrentProfile(token: string) {
   });
 
   if (!response.ok) {
-    throw new Error(await response.text());
+    throw new Error(await readErrorMessage(response, "Sign-in completed, but the profile could not be loaded."));
   }
 
   const payload = await response.json();
@@ -188,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const devLogin = async (requestedProfile?: { email?: string; display_name?: string; role?: string }) => {
-    const response = await fetch(buildApiUrl("/api/auth/dev-login"), {
+    const response = await fetch(buildApiUrl("/auth/dev-login"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -196,7 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify(requestedProfile ?? {}),
     });
     if (!response.ok) {
-      throw new Error(await response.text());
+      throw new Error(await readErrorMessage(response, "Developer sign-in failed."));
     }
 
     const payload = await response.json();

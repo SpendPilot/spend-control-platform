@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { ErrorState, PageHeader } from "@/components/ui";
 import { useAuth } from "@/components/auth-provider";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, readErrorMessage } from "@/lib/api";
 import { buildApiUrl } from "@/lib/contracts";
 
 type ExtractedExpense = {
@@ -50,7 +50,7 @@ export default function ScanPage() {
         body,
       });
       if (!uploadResponse.ok) {
-        throw new Error(await uploadResponse.text());
+        throw new Error(await readErrorMessage(uploadResponse, "Document upload failed."));
       }
 
       const uploadPayload = await uploadResponse.json();

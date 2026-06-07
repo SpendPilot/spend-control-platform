@@ -1,5 +1,25 @@
 import { buildApiUrl } from "@/lib/contracts";
 
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  const contentType = response.headers.get("content-type") || "";
+  const body = await response.text();
+
+  if (contentType.includes("application/json")) {
+    try {
+      const payload = JSON.parse(body) as { detail?: string; message?: string };
+      return payload.detail || payload.message || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  if (contentType.includes("text/html")) {
+    return fallback;
+  }
+
+  return body.trim() || fallback;
+}
+
 export async function apiFetch<T = any>(
   path: string,
   init?: RequestInit & { token?: string | null },
@@ -15,7 +35,7 @@ export async function apiFetch<T = any>(
   });
 
   if (!response.ok) {
-    throw new Error(await response.text());
+    throw new Error(await readErrorMessage(response, `Request failed with status ${response.status}.`));
   }
 
   const payload = await response.json();
@@ -26,3 +46,5 @@ export function getApiError(error: unknown): string {
   if (error instanceof Error) return error.message;
   return "Unexpected API error";
 }
+
+export { readErrorMessage };
