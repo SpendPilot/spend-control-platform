@@ -6,6 +6,7 @@
 - `NEXT_PUBLIC_AUTH_MODE`
 - `NEXT_PUBLIC_ENTRA_FRONTEND_CLIENT_ID`
 - `NEXT_PUBLIC_ENTRA_BACKEND_CLIENT_ID`
+- `NEXT_PUBLIC_ENTRA_BACKEND_AUDIENCE`
 - `NEXT_PUBLIC_ENTRA_API_SCOPE`
 - `NEXT_PUBLIC_ENTRA_AUTHORITY`
 
@@ -30,8 +31,9 @@
 
 Notes:
 
-- use `https://login.microsoftonline.com/common` when you want the platform-owner login to accept a personal Microsoft account
-- `PLATFORM_ADMIN_EMAILS` is the allowlist for those personal platform-admin accounts
+- use `https://login.microsoftonline.com/common` to support both work or school and personal Microsoft accounts
+- `NEXT_PUBLIC_ENTRA_API_SCOPE` must be `<backend Application ID URI>/access_as_user`
+- `PLATFORM_ADMIN_EMAILS` is only for granting platform-admin privileges, not for basic personal-account sign-in
 
 ## Dev-only auth
 

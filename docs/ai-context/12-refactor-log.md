@@ -10,6 +10,8 @@ Latest major refactor:
 6. rewired Helm and raw manifests to use Gateway API HTTPRoutes
 7. replaced the AKS Terraform path with Front Door + WAF + kGateway + Workload Identity bootstrap
 8. updated README, deployment docs, and AI context files
+9. corrected Entra API scope wiring to use the backend Application ID URI
+10. refactored auth bootstrap so personal Microsoft accounts get isolated workspaces instead of being rejected or merged together
 
 Intentional simplification kept:
 

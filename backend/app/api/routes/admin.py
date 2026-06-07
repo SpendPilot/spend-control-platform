@@ -18,7 +18,7 @@ def get_current_organization(principal=Depends(require_role(ROLE_PLATFORM_ADMIN,
             id=principal.organization_id,
             tenant_id=principal.tenant_id or "",
             name=principal.organization_name,
-            slug=principal.organization_name.lower().replace(" ", "-"),
+            slug=principal.organization_slug,
             default_currency=principal.default_currency,
         )
     )

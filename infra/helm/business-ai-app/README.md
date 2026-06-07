@@ -32,8 +32,14 @@ Important values:
 - `auth.frontendClientId`
 - `auth.backendClientId`
 - `auth.backendAudience`
+- `auth.apiScope`
 - `azure.managedIdentityClientId`
 - `azure.aiFoundryEndpoint`
 - `azure.documentIntelligenceEndpoint`
 - `azure.storageAccountUrl`
 - `secrets.databaseUrl`
+
+Auth note:
+
+- `auth.apiScope` should be `<backend Application ID URI>/access_as_user`
+- do not derive it from the backend client ID unless your Application ID URI actually uses `api://<clientId>`

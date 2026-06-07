@@ -26,5 +26,6 @@ data:
   NEXT_PUBLIC_AUTH_MODE: {{ .Values.auth.mode | quote }}
   NEXT_PUBLIC_ENTRA_FRONTEND_CLIENT_ID: {{ .Values.auth.frontendClientId | quote }}
   NEXT_PUBLIC_ENTRA_BACKEND_CLIENT_ID: {{ .Values.auth.backendClientId | quote }}
-  NEXT_PUBLIC_ENTRA_API_SCOPE: {{ printf "api://%s/access_as_user" .Values.auth.backendClientId | quote }}
+  NEXT_PUBLIC_ENTRA_BACKEND_AUDIENCE: {{ .Values.auth.backendAudience | quote }}
+  NEXT_PUBLIC_ENTRA_API_SCOPE: {{ .Values.auth.apiScope | quote }}
   NEXT_PUBLIC_ENTRA_AUTHORITY: {{ .Values.auth.authority | quote }}

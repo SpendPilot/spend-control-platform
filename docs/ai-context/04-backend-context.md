@@ -21,7 +21,7 @@ Important modules:
 Key responsibilities:
 
 - validate Entra tokens
-- bootstrap organizations from tenant claims
+- bootstrap organizations from Entra tenant claims or personal-account identities
 - persist user sessions
 - enforce RBAC
 - manage budgets, expenses, approvals, and audit data

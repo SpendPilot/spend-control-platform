@@ -17,6 +17,7 @@ export async function GET() {
     authMode: process.env.NEXT_PUBLIC_AUTH_MODE || "entra",
     entraFrontendClientId: process.env.NEXT_PUBLIC_ENTRA_FRONTEND_CLIENT_ID || "",
     entraBackendClientId: process.env.NEXT_PUBLIC_ENTRA_BACKEND_CLIENT_ID || "",
+    entraBackendAudience: process.env.NEXT_PUBLIC_ENTRA_BACKEND_AUDIENCE || "",
     entraApiScope: process.env.NEXT_PUBLIC_ENTRA_API_SCOPE || "",
     entraAuthority: process.env.NEXT_PUBLIC_ENTRA_AUTHORITY || "",
   };

@@ -21,7 +21,7 @@ User
 
 ## What is included
 
-- Multi-tenant organization model keyed by Entra tenant ID
+- Multi-tenant organization model for both Entra workforce tenants and personal Microsoft accounts
 - Session-aware Entra auth with dev-only local fallback
 - Finance domain for budgets, expenses, approvals, documents, and audit events
 - Invoice and receipt extraction with Document Intelligence
@@ -78,6 +78,12 @@ helm template spend-control infra/helm/business-ai-app
 - [Managed identity and workload identity](docs/deployment/azure-managed-identity-setup.md)
 - [Azure AI Foundry and Document Intelligence](docs/deployment/azure-ai-foundry-setup.md)
 - [Environment variables](docs/deployment/environment-variables.md)
+
+Authentication note:
+
+- Work or school accounts are grouped by their Entra tenant ID.
+- Personal Microsoft accounts sign in through the same `common` authority and get their own isolated workspace.
+- The frontend must request the API scope using the backend Application ID URI, not the backend client ID.
 
 ## AI context
 

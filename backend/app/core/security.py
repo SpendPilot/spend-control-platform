@@ -31,6 +31,7 @@ class AuthenticatedPrincipal:
     membership_id: str
     organization_id: str
     organization_name: str
+    organization_slug: str
     default_currency: str
     tenant_id: str | None
     entra_oid: str | None
@@ -81,19 +82,13 @@ class EntraTokenValidator:
     def _validate_tenant_and_issuer(self, payload: dict) -> None:
         tenant_id = str(payload.get("tid", "")).strip()
         issuer = str(payload.get("iss", "")).strip()
-        email = str(payload.get("preferred_username") or payload.get("upn") or payload.get("email") or "").strip().lower()
         if not tenant_id or not self._looks_like_guid(tenant_id):
             raise jwt.InvalidTokenError("Token did not include a valid tenant ID")
 
-        is_personal_platform_admin = (
-            tenant_id == MICROSOFT_CONSUMER_TENANT_ID
-            and email
-            and email in self.settings.platform_admin_emails_list
-        )
         if (
             self.settings.allowed_tenant_ids_list
             and tenant_id not in self.settings.allowed_tenant_ids_list
-            and not is_personal_platform_admin
+            and tenant_id != MICROSOFT_CONSUMER_TENANT_ID
         ):
             raise jwt.InvalidTokenError("Tenant is not allowed for this API")
 
@@ -197,6 +192,7 @@ def get_current_principal(
         membership_id=auth_context.membership.id,
         organization_id=auth_context.organization.id,
         organization_name=auth_context.organization.name,
+        organization_slug=auth_context.organization.slug,
         default_currency=auth_context.organization.default_currency,
         tenant_id=auth_context.organization.tenant_id,
         entra_oid=auth_context.user.entra_oid,

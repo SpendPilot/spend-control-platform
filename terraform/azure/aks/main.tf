@@ -479,6 +479,7 @@ resource "helm_release" "application" {
         frontendClientId    = azuread_application.frontend_spa.client_id
         backendClientId     = azuread_application.backend_api.client_id
         backendAudience     = local.backend_audience
+        apiScope            = "${local.backend_audience}/access_as_user"
         allowedTenantIds    = var.allowed_tenant_ids
         platformAdminEmails = var.platform_admin_emails
       }

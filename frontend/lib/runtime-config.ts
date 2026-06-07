@@ -3,6 +3,7 @@ export type RuntimeConfig = {
   authMode: "entra" | "dev-local";
   entraFrontendClientId: string;
   entraBackendClientId: string;
+  entraBackendAudience: string;
   entraApiScope: string;
   entraAuthority: string;
 };
@@ -23,6 +24,7 @@ export function getRuntimeConfig(): RuntimeConfig {
     authMode: (process.env.NEXT_PUBLIC_AUTH_MODE?.trim() || "entra") as "entra" | "dev-local",
     entraFrontendClientId: process.env.NEXT_PUBLIC_ENTRA_FRONTEND_CLIENT_ID?.trim() || "",
     entraBackendClientId: process.env.NEXT_PUBLIC_ENTRA_BACKEND_CLIENT_ID?.trim() || "",
+    entraBackendAudience: process.env.NEXT_PUBLIC_ENTRA_BACKEND_AUDIENCE?.trim() || "",
     entraApiScope: process.env.NEXT_PUBLIC_ENTRA_API_SCOPE?.trim() || "",
     entraAuthority: process.env.NEXT_PUBLIC_ENTRA_AUTHORITY?.trim() || "",
   };

@@ -23,9 +23,10 @@ Frontend SPA registration:
 - supported account types: `AzureADandPersonalMicrosoftAccount`
 - authority: `https://login.microsoftonline.com/common`
 - requested access token version: `2`
+- request the API scope as `<backend Application ID URI>/access_as_user`
 - local redirect URI for `http://localhost:3000/login`
 - Front Door login redirect URI based on the deployed endpoint hostname
 
 Customer tenant onboarding still requires tenant admin consent and role assignment in the customer tenant because this is a multi-tenant SaaS model.
 
-Personal Microsoft accounts are only supported for platform-owner access. The backend accepts personal accounts only when the email is listed in `PLATFORM_ADMIN_EMAILS`. Customer company users must still use work or school accounts from their own Entra tenants.
+Personal Microsoft accounts are also supported. The application creates one isolated workspace per personal Microsoft account so consumer users do not collapse into the shared Microsoft consumer tenant.

@@ -141,7 +141,6 @@ Terraform does not manage these external steps:
 - map `myfinagent.online` to Azure Front Door from Hostinger
 - add the Front Door custom domain and validate TLS in the Azure portal
 - assign customer users in their own Entra tenants after they consent to the app
-- keep `platform_admin_emails` set for any platform owner who signs in with a personal Microsoft account
 
 ## Front Door note
 

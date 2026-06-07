@@ -68,7 +68,7 @@ class Settings(BaseSettings):
             return self.entra_authority.rstrip("/")
         if self.azure_tenant_id:
             return f"https://login.microsoftonline.com/{self.azure_tenant_id}"
-        return "https://login.microsoftonline.com/organizations"
+        return "https://login.microsoftonline.com/common"
 
     @property
     def foundry_openai_base_url(self) -> str:

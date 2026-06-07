@@ -12,7 +12,7 @@ Current deployable units:
 
 Business scope:
 
-- multi-tenant SaaS for Entra-backed organizations
+- multi-tenant SaaS for both Entra organizations and personal Microsoft account users
 - expenses, approvals, budgets, and finance documents
 - OCR and invoice extraction
 - AI-assisted finance review

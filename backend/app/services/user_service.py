@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -11,8 +12,7 @@ from app.core.rbac import ROLE_EMPLOYEE, ROLE_ORG_ADMIN, ROLE_PLATFORM_ADMIN, de
 from app.models import ExpenseCategory, Organization, OrganizationMembership, User, UserSession
 
 MICROSOFT_CONSUMER_TENANT_ID = "9188040d-6c67-4c5b-b112-36a304b66dad"
-PLATFORM_PERSONAL_ADMIN_TENANT_ID = "platform-personal-admins"
-PLATFORM_PERSONAL_ADMIN_ORG_NAME = "Platform Operations"
+PERSONAL_ACCOUNT_TENANT_PREFIX = "msa"
 
 DEFAULT_CATEGORIES = [
     ("travel", "Travel"),
@@ -42,6 +42,12 @@ def _org_name_from_email(email: str) -> str:
     return domain.title() or "Organization"
 
 
+def _personal_workspace_name(payload: dict, email: str) -> str:
+    display_name = str(payload.get("name") or "").strip()
+    base_name = display_name or email.split("@")[0].replace(".", " ").replace("_", " ").title()
+    return f"{base_name} Workspace"
+
+
 def _is_personal_microsoft_account(payload: dict) -> bool:
     tenant_id = str(payload.get("tid") or "").strip().lower()
     issuer = str(payload.get("iss") or "").strip().lower()
@@ -51,6 +57,16 @@ def _is_personal_microsoft_account(payload: dict) -> bool:
         or "/consumers/" in issuer
         or identity_provider in {"live.com", "9188040d-6c67-4c5b-b112-36a304b66dad"}
     )
+
+
+def _organization_partition_key(payload: dict, email: str) -> str:
+    tenant_id = str(payload.get("tid") or "local-dev-tenant").strip()
+    if not _is_personal_microsoft_account(payload):
+        return tenant_id
+
+    stable_account_key = str(payload.get("oid") or payload.get("sub") or email.strip().lower())
+    digest = hashlib.sha256(stable_account_key.encode("utf-8")).hexdigest()[:24]
+    return f"{PERSONAL_ACCOUNT_TENANT_PREFIX}:{digest}"
 
 
 def _claims_roles(payload: dict) -> list[str]:
@@ -136,10 +152,7 @@ def sync_user_context_from_claims(
     original_tenant_id = str(payload.get("tid") or "local-dev-tenant")
     is_platform_admin = email.lower() in settings.platform_admin_emails_list
     is_personal_account = _is_personal_microsoft_account(payload)
-    if is_personal_account and not is_platform_admin:
-        raise ValueError("Personal Microsoft accounts are only allowed for configured platform admins.")
-
-    tenant_id = PLATFORM_PERSONAL_ADMIN_TENANT_ID if is_personal_account else original_tenant_id
+    tenant_id = _organization_partition_key(payload, email)
     external_id = _external_id_from_claims(payload)
     user = db.query(User).filter(User.external_id == external_id).first()
     if user is None:
@@ -163,7 +176,7 @@ def sync_user_context_from_claims(
 
     organization = db.query(Organization).filter(Organization.tenant_id == tenant_id).first()
     if organization is None:
-        org_name = PLATFORM_PERSONAL_ADMIN_ORG_NAME if is_personal_account else payload.get("tenant_name") or _org_name_from_email(email)
+        org_name = _personal_workspace_name(payload, email) if is_personal_account else payload.get("tenant_name") or _org_name_from_email(email)
         organization = Organization(
             tenant_id=tenant_id,
             name=org_name,
@@ -186,7 +199,7 @@ def sync_user_context_from_claims(
         membership = OrganizationMembership(
             organization_id=organization.id,
             user_id=user.id,
-            role=ROLE_ORG_ADMIN if is_personal_account else _default_membership_role(db, organization, payload),
+            role=_default_membership_role(db, organization, payload),
         )
         db.add(membership)
 

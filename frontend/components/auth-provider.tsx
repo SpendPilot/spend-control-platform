@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const authMode = runtimeConfig.authMode;
   const apiScope =
     runtimeConfig.entraApiScope ||
-    (runtimeConfig.entraBackendClientId ? `api://${runtimeConfig.entraBackendClientId}/access_as_user` : "");
+    (runtimeConfig.entraBackendAudience ? `${runtimeConfig.entraBackendAudience}/access_as_user` : "");
 
   const [token, setToken] = useState<string | null>(null);
   const [profile, setProfile] = useState<AuthProfile | null>(null);

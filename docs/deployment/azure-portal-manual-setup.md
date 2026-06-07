@@ -94,8 +94,9 @@ Grant admin consent after both apps are configured.
 Important:
 
 - use the `common` authority in the frontend configuration
-- keep customer-company onboarding on work or school accounts
-- only emails listed in `PLATFORM_ADMIN_EMAILS` should be allowed to use personal Microsoft accounts for platform administration
+- set the frontend API scope to `<backend Application ID URI>/access_as_user`
+- customer-company users still group by their Entra tenant
+- personal Microsoft accounts get one isolated workspace each
 
 ## Images and registry
 

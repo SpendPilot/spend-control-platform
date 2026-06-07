@@ -139,6 +139,7 @@ auth:
   frontendClientId: ""
   backendClientId: ""
   backendAudience: ""
+  apiScope: ""
   allowedTenantIds: ""
   platformAdminEmails: ""
 
