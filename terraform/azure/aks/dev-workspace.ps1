@@ -34,8 +34,13 @@ function Invoke-Terraform {
     )
 
     & terraform @Args
+    $commandSucceeded = $?
     $exitCode = $LASTEXITCODE
     if ($null -eq $exitCode) {
+        if ($commandSucceeded) {
+            return
+        }
+
         $exitCode = "unknown"
     }
 

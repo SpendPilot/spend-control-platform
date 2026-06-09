@@ -94,8 +94,7 @@ GitHub Actions path for the same live environment:
 - PRs into `main` plan from branches named `terraform/*`
 - pushes to `main` apply against the live `dev` Terraform workspace
 - Azure auth uses Microsoft Entra OIDC, so there is no client secret to store in GitHub
-- the workflow signs into Azure, refreshes the `dev` kubeconfig, and then calls the same `dev-workspace.ps1` helper used locally
-- the helper now uses Azure CLI auth locally and automatically switches the Terraform backend to OIDC when it runs inside GitHub Actions
+- the workflow signs into Azure, runs `terraform init`, selects the live `dev` workspace, refreshes the AKS kubeconfig, and then runs `terraform plan` or `terraform apply` directly in YAML
 
 Authentication note:
 

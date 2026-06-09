@@ -107,7 +107,7 @@ Behavior:
 - `push` to `main` runs `apply`
 - `workflow_dispatch` can also run the same `apply` path manually
 - the workflow uses Microsoft Entra OIDC through the `spendpilot-prod-github-actions` app registration and does not need a client secret
-- the workflow reuses `terraform/azure/aks/dev-workspace.ps1`, so local operators and GitHub Actions follow the same init, workspace, and kubeconfig path
+- the workflow runs `terraform init`, `terraform workspace select dev`, `az aks get-credentials`, and then `terraform plan` or `terraform apply` directly in YAML
 
 Live OIDC values:
 
