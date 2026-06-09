@@ -95,6 +95,7 @@ GitHub Actions path for the same live environment:
 - pushes to `main` apply against the live `dev` Terraform workspace
 - Azure auth uses Microsoft Entra OIDC, so there is no client secret to store in GitHub
 - the workflow signs into Azure, refreshes the `dev` kubeconfig, and then calls the same `dev-workspace.ps1` helper used locally
+- the helper now uses Azure CLI auth locally and automatically switches the Terraform backend to OIDC when it runs inside GitHub Actions
 
 Authentication note:
 

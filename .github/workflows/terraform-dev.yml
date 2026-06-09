@@ -43,6 +43,8 @@ jobs:
       ARM_CLIENT_ID: "f2423c6d-2f93-4369-8ed5-b0637b086dcc"
       ARM_TENANT_ID: "920e9322-340c-4fbc-bf09-dc8fd6636182"
       ARM_SUBSCRIPTION_ID: "e1f5b4be-e0ba-4ccb-8708-a949458fcd83"
+      ARM_USE_OIDC: "true"
+      ARM_USE_AZUREAD: "true"
       TF_IN_AUTOMATION: "true"
       AZURE_CLI_DISABLE_CONNECTION_VERIFICATION: "1"
 
@@ -79,8 +81,8 @@ jobs:
 
       - name: Terraform plan
         if: github.event_name == 'pull_request'
-        run: powershell -ExecutionPolicy Bypass -File .\dev-workspace.ps1 -Action plan -BuildImagesDuringApply
+        run: .\dev-workspace.ps1 -Action plan -BuildImagesDuringApply
 
       - name: Terraform apply
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-        run: powershell -ExecutionPolicy Bypass -File .\dev-workspace.ps1 -Action apply -AutoApprove -BuildImagesDuringApply
+        run: .\dev-workspace.ps1 -Action apply -AutoApprove -BuildImagesDuringApply

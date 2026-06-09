@@ -11,9 +11,20 @@ $ErrorActionPreference = "Stop"
 $env:AZURE_CLI_DISABLE_CONNECTION_VERIFICATION = "1"
 
 $terraformArgs = @("-var-file", "terraform.tfvars")
+$terraformInitArgs = @("init", "-reconfigure")
 
 if (-not $BuildImagesDuringApply) {
     $terraformArgs += @("-var", "build_images_during_apply=false")
+}
+
+if ($env:GITHUB_ACTIONS -eq "true") {
+    $terraformInitArgs += @(
+        "-backend-config=use_oidc=true",
+        "-backend-config=use_azuread_auth=true"
+    )
+}
+else {
+    $terraformInitArgs += "-backend-config=use_cli=true"
 }
 
 function Invoke-Terraform {
@@ -23,8 +34,17 @@ function Invoke-Terraform {
     )
 
     & terraform @Args
-    if ($LASTEXITCODE -ne 0) {
-        throw "terraform $($Args -join ' ') failed with exit code $LASTEXITCODE"
+    $exitCode = $LASTEXITCODE
+    if ($null -eq $exitCode) {
+        $exitCode = "unknown"
+    }
+
+    if ($exitCode -ne 0 -and $exitCode -ne "unknown") {
+        throw "terraform $($Args -join ' ') failed with exit code $exitCode"
+    }
+
+    if ($exitCode -eq "unknown") {
+        throw "terraform $($Args -join ' ') failed before returning a process exit code"
     }
 }
 
@@ -63,7 +83,7 @@ function Ensure-Kubeconfig {
 
 Push-Location $PSScriptRoot
 try {
-    Invoke-Terraform -Args @("init", "-reconfigure")
+    Invoke-Terraform -Args $terraformInitArgs
 
     if ($Action -eq "init") {
         Ensure-DevWorkspace

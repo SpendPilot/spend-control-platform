@@ -92,6 +92,8 @@ Script behavior:
 - always runs `terraform init`
 - always switches back to the live `dev` workspace
 - always refreshes `.generated-kubeconfig` from the live AKS admin credentials before `plan` and `apply`
+- uses Azure CLI auth for the backend during local runs
+- switches the backend to OIDC plus Azure AD auth automatically when `GITHUB_ACTIONS=true`
 - defaults to `build_images_during_apply=false` unless you pass `-BuildImagesDuringApply`
 
 ## GitHub Actions workflow
