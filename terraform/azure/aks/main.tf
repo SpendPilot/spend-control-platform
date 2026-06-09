@@ -291,7 +291,7 @@ resource "azuread_application" "backend_api" {
   }
 
   lifecycle {
-    ignore_changes = [api[0].known_client_applications]
+    ignore_changes = [owners, api[0].known_client_applications]
   }
 }
 
@@ -319,6 +319,10 @@ resource "azuread_application" "frontend_spa" {
       id   = uuidv5("dns", "${local.name}-access-as-user")
       type = "Scope"
     }
+  }
+
+  lifecycle {
+    ignore_changes = [owners]
   }
 }
 

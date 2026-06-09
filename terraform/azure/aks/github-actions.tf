@@ -14,7 +14,7 @@ resource "azuread_application" "github_actions" {
   owners       = [data.azuread_client_config.current.object_id]
 
   lifecycle {
-    ignore_changes = [required_resource_access]
+    ignore_changes = [owners, required_resource_access]
   }
 }
 
