@@ -447,8 +447,8 @@ resource "terraform_data" "gateway_origin_tls_secret" {
       $tempDir = Join-Path $env:TEMP 'spend-control-gateway-origin-tls'
       New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
       $pfxPath = Join-Path $tempDir 'origin.pfx'
-      $certPemPath = Join-Path $tempDir 'tls.crt'
-      $keyPemPath = Join-Path $tempDir 'tls.key'
+      $certPemPath = Join-Path $tempDir 'origin.crt'
+      $keyPemPath = Join-Path $tempDir 'origin.key'
       $password = ConvertTo-SecureString -String 'SpendControlOriginTls!2026' -Force -AsPlainText
       $cert = New-SelfSignedCertificate -DnsName 'spend-control-gateway','spend-control-gateway.${var.namespace}','spend-control-gateway.${var.namespace}.svc','spend-control-gateway.${var.namespace}.svc.cluster.local' -CertStoreLocation 'Cert:\CurrentUser\My' -NotAfter (Get-Date).AddYears(1) -KeyExportPolicy Exportable
       Export-PfxCertificate -Cert $cert -FilePath $pfxPath -Password $password | Out-Null
@@ -473,22 +473,8 @@ key_pem_path.write_bytes(
     )
 )
 '@ | python - $pfxPath 'SpendControlOriginTls!2026' $certPemPath $keyPemPath
-      $certB64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($certPemPath))
-      $keyB64 = [Convert]::ToBase64String([IO.File]::ReadAllBytes($keyPemPath))
-      $remoteCommand = @"
-cat <<'EOF' | kubectl apply -f -
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ${local.gateway_origin_tls_secret_name}
-  namespace: ${var.namespace}
-type: kubernetes.io/tls
-data:
-  tls.crt: $certB64
-  tls.key: $keyB64
-EOF
-"@
-      az aks command invoke --resource-group ${module.resource_group.name} --name ${module.aks_cluster.name} --command $remoteCommand | Out-Null
+      $remoteCommand = "kubectl create secret tls ${local.gateway_origin_tls_secret_name} -n ${var.namespace} --cert=origin.crt --key=origin.key --dry-run=client -o yaml | kubectl apply -f -"
+      az aks command invoke --resource-group ${module.resource_group.name} --name ${module.aks_cluster.name} --file $certPemPath --file $keyPemPath --command $remoteCommand
       Remove-Item -Force $pfxPath, $certPemPath, $keyPemPath
     EOT
     environment = {
@@ -522,7 +508,7 @@ resource "helm_release" "application" {
           protocol = "HTTP"
         }
         tls = {
-          enabled               = true
+          enabled               = var.frontdoor_origin_use_https
           port                  = 443
           protocol              = "HTTPS"
           mode                  = "Terminate"
@@ -656,10 +642,10 @@ resource "azurerm_cdn_frontdoor_origin" "kgateway" {
   name                           = "${local.name}-kgw"
   cdn_frontdoor_origin_group_id  = azurerm_cdn_frontdoor_origin_group.this.id
   enabled                        = true
-  host_name                      = try(data.kubernetes_service.gateway.status[0].load_balancer[0].ingress[0].ip, data.kubernetes_service.gateway.status[0].load_balancer[0].ingress[0].hostname)
+  host_name                      = trimspace(var.frontdoor_origin_hostname_override) != "" ? trimspace(var.frontdoor_origin_hostname_override) : try(data.kubernetes_service.gateway.status[0].load_balancer[0].ingress[0].ip, data.kubernetes_service.gateway.status[0].load_balancer[0].ingress[0].hostname)
   http_port                      = 80
   https_port                     = 443
-  origin_host_header             = try(data.kubernetes_service.gateway.status[0].load_balancer[0].ingress[0].ip, data.kubernetes_service.gateway.status[0].load_balancer[0].ingress[0].hostname)
+  origin_host_header             = trimspace(var.frontdoor_origin_hostname_override) != "" ? trimspace(var.frontdoor_origin_hostname_override) : try(data.kubernetes_service.gateway.status[0].load_balancer[0].ingress[0].ip, data.kubernetes_service.gateway.status[0].load_balancer[0].ingress[0].hostname)
   priority                       = 1
   weight                         = 1000
   certificate_name_check_enabled = false
@@ -710,16 +696,33 @@ resource "azurerm_cdn_frontdoor_route" "this" {
   cdn_frontdoor_endpoint_id     = azurerm_cdn_frontdoor_endpoint.this.id
   cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.this.id
   cdn_frontdoor_origin_ids      = [azurerm_cdn_frontdoor_origin.kgateway.id]
-  enabled                       = true
-  forwarding_protocol           = var.frontdoor_origin_use_https ? "HttpsOnly" : "HttpOnly"
-  https_redirect_enabled        = true
-  patterns_to_match             = ["/*"]
-  supported_protocols           = ["Http", "Https"]
-  link_to_default_domain        = true
+  cdn_frontdoor_custom_domain_ids = local.frontdoor_apex_custom_domain_id != "" ? [
+    local.frontdoor_apex_custom_domain_id,
+  ] : []
+  enabled                = true
+  forwarding_protocol    = var.frontdoor_origin_use_https ? "HttpsOnly" : "HttpOnly"
+  https_redirect_enabled = true
+  patterns_to_match      = ["/*"]
+  supported_protocols    = ["Http", "Https"]
+  link_to_default_domain = true
+}
 
-  lifecycle {
-    ignore_changes = [cdn_frontdoor_custom_domain_ids]
-  }
+resource "azurerm_cdn_frontdoor_route" "www" {
+  count = local.frontdoor_www_custom_domain_id != "" ? 1 : 0
+
+  name                          = "${local.name}-www-route"
+  cdn_frontdoor_endpoint_id     = azurerm_cdn_frontdoor_endpoint.this.id
+  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.this.id
+  cdn_frontdoor_origin_ids      = [azurerm_cdn_frontdoor_origin.kgateway.id]
+  cdn_frontdoor_custom_domain_ids = [
+    local.frontdoor_www_custom_domain_id,
+  ]
+  enabled                = true
+  forwarding_protocol    = var.frontdoor_origin_use_https ? "HttpsOnly" : "HttpOnly"
+  https_redirect_enabled = true
+  patterns_to_match      = ["/*"]
+  supported_protocols    = ["Http", "Https"]
+  link_to_default_domain = false
 }
 
 resource "azurerm_cdn_frontdoor_security_policy" "this" {
@@ -734,6 +737,15 @@ resource "azurerm_cdn_frontdoor_security_policy" "this" {
         domain {
           cdn_frontdoor_domain_id = azurerm_cdn_frontdoor_endpoint.this.id
         }
+
+        dynamic "domain" {
+          for_each = local.frontdoor_custom_domain_ids
+
+          content {
+            cdn_frontdoor_domain_id = domain.value
+          }
+        }
+
         patterns_to_match = ["/*"]
       }
     }

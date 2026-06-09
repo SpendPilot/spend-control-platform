@@ -61,3 +61,15 @@ output "document_intelligence_endpoint" {
 output "foundry_endpoint" {
   value = azurerm_cognitive_account.foundry.endpoint
 }
+
+output "github_actions_client_id" {
+  value = azuread_application.github_actions.client_id
+}
+
+output "github_actions_tenant_id" {
+  value = data.azurerm_client_config.current.tenant_id
+}
+
+output "github_actions_subscription_id" {
+  value = data.azurerm_client_config.current.subscription_id
+}

@@ -1,0 +1,16 @@
+23224 : 2026-06-07 17:15:47,952 : INFO : telemetry.main : Attempt start. Configuration directory [C:\Users\307481\Desktop\PROJECT2\spend-control-platform\.azure-runtime-fix]. Cache directory [C:\Users\307481\Desktop\PROJECT2\spend-control-platform\.azure-runtime-fix\telemetry\20260607171547268].
+23224 : 2026-06-07 17:15:47,953 : INFO : telemetry.records : 1 cache files to upload.
+23224 : 2026-06-07 17:15:47,954 : INFO : telemetry.records : Processed file C:\Users\307481\Desktop\PROJECT2\spend-control-platform\.azure-runtime-fix\telemetry\20260607171547268\cache into 1 records.
+23224 : 2026-06-07 17:15:47,957 : INFO : telemetry.records : Remove directory C:\Users\307481\Desktop\PROJECT2\spend-control-platform\.azure-runtime-fix\telemetry\20260607171547268
+29616 : 2026-06-07 17:15:47,963 : INFO : telemetry.main : Attempt start. Configuration directory [C:\Users\307481\Desktop\PROJECT2\spend-control-platform\.azure-runtime-fix]. Cache directory [C:\Users\307481\Desktop\PROJECT2\spend-control-platform\.azure-runtime-fix\telemetry\20260607171547279].
+29616 : 2026-06-07 17:15:47,964 : INFO : telemetry.records : 1 cache files to upload.
+29616 : 2026-06-07 17:15:47,965 : INFO : telemetry.records : Processed file C:\Users\307481\Desktop\PROJECT2\spend-control-platform\.azure-runtime-fix\telemetry\20260607171547279\cache into 1 records.
+29616 : 2026-06-07 17:15:47,967 : INFO : telemetry.records : Remove directory C:\Users\307481\Desktop\PROJECT2\spend-control-platform\.azure-runtime-fix\telemetry\20260607171547279
+23224 : 2026-06-07 17:15:48,112 : INFO : telemetry.client : Accumulated 1 events. Flush the clients.
+23224 : 2026-06-07 17:15:48,113 : INFO : telemetry.client : Flush client c4395b75-49cc-422c-bc95-c7d51aef5d46.
+29616 : 2026-06-07 17:15:48,113 : INFO : telemetry.client : Accumulated 1 events. Flush the clients.
+29616 : 2026-06-07 17:15:48,114 : INFO : telemetry.client : Flush client c4395b75-49cc-422c-bc95-c7d51aef5d46.
+23224 : 2026-06-07 17:15:49,157 : INFO : telemetry.sender : Sending 4039 bytes
+23224 : 2026-06-07 17:15:49,157 : INFO : telemetry.sender : Finish uploading in 1.043538 seconds.
+29616 : 2026-06-07 17:15:49,189 : INFO : telemetry.sender : Sending 4039 bytes
+29616 : 2026-06-07 17:15:49,189 : INFO : telemetry.sender : Finish uploading in 1.074532 seconds.

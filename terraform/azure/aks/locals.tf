@@ -21,7 +21,15 @@ locals {
       [for file in sort(fileset("${path.root}/../../../frontend", "**")) : filesha256("${path.root}/../../../frontend/${file}")],
     ),
   )
-  application_rollout_revision = sha256("${local.backend_source_hash}:${local.frontend_source_hash}:${var.image_tag}")
+  application_rollout_revision    = sha256("${local.backend_source_hash}:${local.frontend_source_hash}:${var.image_tag}")
+  github_repository               = "${var.github_repository_owner}/${var.github_repository_name}"
+  github_actions_oidc_issuer      = "https://token.actions.githubusercontent.com"
+  frontdoor_apex_custom_domain_id = trimspace(var.frontdoor_apex_custom_domain_id)
+  frontdoor_www_custom_domain_id  = trimspace(var.frontdoor_www_custom_domain_id)
+  frontdoor_custom_domain_ids = compact([
+    local.frontdoor_apex_custom_domain_id,
+    local.frontdoor_www_custom_domain_id,
+  ])
   frontend_redirect_uris = distinct(
     concat(
       var.frontend_redirect_uris,

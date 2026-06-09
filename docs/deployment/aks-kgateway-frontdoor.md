@@ -20,7 +20,7 @@ Routing rules:
 
 Operational notes:
 
-- Front Door probes `https://<origin>/health`
+- Front Door probes `http://<origin>/health`
 - kGateway is the only public AKS entrypoint
 - Backend services stay `ClusterIP`
 - Browser traffic should keep `NEXT_PUBLIC_API_BASE_URL=/api`
@@ -29,8 +29,8 @@ Operational notes:
 - The app namespace is created by Terraform before the Helm release; the chart itself should not also be relied on for namespace bootstrap
 - The migration job is a post-install and post-upgrade hook because it depends on the chart-created ServiceAccount and Secret
 - The AKS gateway service is a `LoadBalancer` service named `spend-control-gateway`
-- The AKS gateway service exposes both `80` and `443`
-- Terraform creates a TLS secret for the gateway origin so Front Door can forward over `HTTPS`
-- Front Door keeps origin certificate name checks disabled because the gateway origin is still addressed by the public load balancer IP
+- The AKS gateway service exposes `80` in the validated default path
+- Terraform can still create a gateway TLS secret, but the validated default keeps Front Door on `HTTP` to avoid self-signed origin certificate failures
+- Front Door uses the gateway public IP's Azure cloudapp FQDN as the origin target when available
 - Front Door may take additional time to propagate even after `provisioningState` is `Succeeded`
-- The validated route forwards `HTTPS` from Front Door to the AKS gateway while still redirecting browsers to HTTPS at the edge
+- The validated route keeps browser HTTPS at the Front Door edge while forwarding `HTTP` to the AKS gateway origin

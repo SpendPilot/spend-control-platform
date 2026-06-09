@@ -20,7 +20,7 @@ This is the exact deployment path that was used to bring the environment up succ
 - Microsoft Entra app registrations and service principals
 - kGateway on AKS
 - application namespace, services, Gateway, HTTPRoutes, and workloads
-- Azure Front Door Premium, WAF, origin group, route, and origin
+- Azure Front Door Premium, WAF, origin group, routes, and origin
 
 ## Known live deployment choices
 
@@ -32,8 +32,10 @@ This is the exact deployment path that was used to bring the environment up succ
   The tested `gpt-4.1-mini` pay-per-token deployment succeeded there, while the Central India probe did not.
 - kGateway is installed from the vendored chart under `infra/vendor/kgateway/`.
   This avoids OCI chart pull failures in restricted networks.
-- Front Door forwards to the origin with `HttpsOnly`, and the origin group health probe also uses `Https`.
-- The gateway `LoadBalancer` service exposes `80` and `443`.
+- Front Door forwards to the origin with `HttpOnly`, and the origin group health probe also uses `Http`.
+- The validated Front Door origin target is the gateway public IP's Azure cloudapp FQDN override, not the raw public IP.
+- Terraform can bind validated apex and `www` Front Door custom-domain IDs into their route associations and into the shared WAF security policy.
+- The gateway `LoadBalancer` service exposes `80` in the validated default path.
 - The WAF policy includes a custom auth rate-limit rule on `/api/auth`.
 - Blob Storage defaults to OAuth auth for the application path and keeps local users disabled.
   Shared-key auth remains enabled because the current AzureRM provider still uses it when managing queue properties.
@@ -53,6 +55,68 @@ az account set --subscription <subscription-id>
 cd terraform/azure/aks
 terraform init
 ```
+
+## Remote backend and workspaces
+
+This stack now uses the Azure Blob remote backend:
+
+- resource group: `terra-rg`
+- storage account: `lijazterracount`
+- container: `terracontainer`
+- key: `spendpilot.tfstate`
+
+Current workspace model:
+
+- `dev` is the active live workspace and owns the existing deployed stack
+- `default` is intentionally empty
+- `staging` is an empty placeholder for future work
+- `prod` is an empty placeholder for future work
+
+Important:
+
+- keep using `terraform workspace select dev` before planning or applying this live stack
+- `staging` and `prod` are not ready to apply yet because the configuration is not yet parameterized by workspace-specific names or variables
+- the current live infrastructure still uses the existing `spendpilot-prod-*` resource names even though it now lives under the `dev` Terraform workspace, because this migration was state-only and intentionally non-destructive
+
+Helper script:
+
+```powershell
+cd terraform/azure/aks
+powershell -ExecutionPolicy Bypass -File .\dev-workspace.ps1 -Action init
+powershell -ExecutionPolicy Bypass -File .\dev-workspace.ps1 -Action plan
+powershell -ExecutionPolicy Bypass -File .\dev-workspace.ps1 -Action apply
+```
+
+Script behavior:
+
+- always runs `terraform init`
+- always switches back to the live `dev` workspace
+- always refreshes `.generated-kubeconfig` from the live AKS admin credentials before `plan` and `apply`
+- defaults to `build_images_during_apply=false` unless you pass `-BuildImagesDuringApply`
+
+## GitHub Actions workflow
+
+The repository now includes `.github/workflows/terraform-dev.yml`.
+
+Behavior:
+
+- `pull_request` into `main` runs `plan`
+- only PR source branches starting with `terraform/` are allowed to run that plan job
+- `push` to `main` runs `apply`
+- `workflow_dispatch` can also run the same `apply` path manually
+- the workflow uses Microsoft Entra OIDC through the `spendpilot-prod-github-actions` app registration and does not need a client secret
+- the workflow reuses `terraform/azure/aks/dev-workspace.ps1`, so local operators and GitHub Actions follow the same init, workspace, and kubeconfig path
+
+Live OIDC values:
+
+- client ID: `f2423c6d-2f93-4369-8ed5-b0637b086dcc`
+- tenant ID: `920e9322-340c-4fbc-bf09-dc8fd6636182`
+- subscription ID: `e1f5b4be-e0ba-4ccb-8708-a949458fcd83`
+
+Federated credential subjects:
+
+- `repo:SpendPilot/spend-control-platform:pull_request`
+- `repo:SpendPilot/spend-control-platform:ref:refs/heads/main`
 
 ## Standard path
 
@@ -162,7 +226,9 @@ az postgres flexible-server show `
 Terraform does not manage these external steps:
 
 - map `myfinagent.online` to Azure Front Door from Hostinger
-- add the Front Door custom domain and validate TLS in the Azure portal
+- add both `myfinagent.online` and `www.myfinagent.online` as Front Door custom domains
+- validate TLS for both domains
+- copy the resulting custom-domain resource IDs into `frontdoor_apex_custom_domain_id` and `frontdoor_www_custom_domain_id` in `terraform.tfvars`
 - assign customer users in their own Entra tenants after they consent to the app
 - if a customer tenant blocks user consent or has not onboarded the app yet, have a tenant admin open the `entra_admin_consent_url_template` output with their tenant ID filled in so Entra can create the external enterprise applications and service principals
 
@@ -179,8 +245,9 @@ After a successful apply, Front Door configuration can still take time to propag
 
 Treat the direct gateway health check as the immediate truth, and re-test Front Door after propagation completes.
 
-If the Front Door default hostname still returns the Azure-managed `404 CONFIG_NOCACHE` page after roughly 45 minutes:
+If the Front Door default hostname or one of the custom domains still returns the Azure-managed `404 CONFIG_NOCACHE` page after roughly 45 minutes:
 
 - re-save the route and origin in the portal or by Terraform apply
+- verify the custom domain is attached to the active route, not just validated on the profile
 - verify the gateway public IP still answers `200 OK`
 - open an Azure support case for Front Door route propagation with the endpoint, route, and origin IDs

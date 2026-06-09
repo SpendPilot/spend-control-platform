@@ -213,9 +213,9 @@ variable "frontdoor_sku_name" {
 }
 
 variable "frontdoor_origin_use_https" {
-  description = "Whether Front Door should forward traffic to the AKS gateway over HTTPS."
+  description = "Whether Front Door should forward traffic to the AKS gateway over HTTPS. Keep this false unless the gateway origin serves a publicly trusted certificate."
   type        = bool
-  default     = true
+  default     = false
 }
 
 variable "frontdoor_auth_rate_limit_threshold" {
@@ -228,6 +228,24 @@ variable "frontdoor_auth_rate_limit_duration_minutes" {
   description = "Duration window in minutes for the authentication endpoint rate limit."
   type        = number
   default     = 1
+}
+
+variable "frontdoor_origin_hostname_override" {
+  description = "Optional DNS hostname for the AKS gateway origin. Prefer a stable Azure or custom DNS name over the raw public IP when available."
+  type        = string
+  default     = ""
+}
+
+variable "frontdoor_apex_custom_domain_id" {
+  description = "Optional Azure resource ID for the validated apex Front Door custom domain, such as myfinagent.online."
+  type        = string
+  default     = ""
+}
+
+variable "frontdoor_www_custom_domain_id" {
+  description = "Optional Azure resource ID for the validated www Front Door custom domain, such as www.myfinagent.online."
+  type        = string
+  default     = ""
 }
 
 variable "document_intelligence_sku" {
@@ -288,4 +306,22 @@ variable "frontend_redirect_uris" {
   description = "Additional redirect URIs for the frontend SPA app registration."
   type        = list(string)
   default     = ["http://localhost:3000/login"]
+}
+
+variable "github_repository_owner" {
+  description = "GitHub repository owner used for the GitHub Actions OIDC subject."
+  type        = string
+  default     = "SpendPilot"
+}
+
+variable "github_repository_name" {
+  description = "GitHub repository name used for the GitHub Actions OIDC subject."
+  type        = string
+  default     = "spend-control-platform"
+}
+
+variable "github_actions_main_branch" {
+  description = "GitHub branch allowed to exchange OIDC tokens for mainline Terraform applies."
+  type        = string
+  default     = "main"
 }

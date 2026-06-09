@@ -7,7 +7,7 @@ Current target runtime:
 ```txt
 User
   -> Azure Front Door Premium + WAF
-  -> HTTPS origin to kGateway on AKS
+  -> HTTP origin to kGateway on AKS via Azure public origin FQDN
   -> HTTPRoutes
       -> frontend
       -> identity-service
@@ -28,7 +28,7 @@ User
 - AI policy/risk summaries with Azure AI Foundry plus local fallback behavior
 - AKS deployment assets using Gateway API and kGateway
 - Terraform stack that bootstraps Azure, AKS, Entra app registrations, workload identity, Helm releases, and Front Door
-- Front Door edge hardening with HTTPS origin forwarding and auth rate limiting at WAF
+- Front Door edge hardening with HTTPS at the edge, auth rate limiting at WAF, and Terraform-managed origin hostname wiring
 
 ## Repository layout
 
@@ -80,6 +80,22 @@ helm template spend-control infra/helm/business-ai-app
 - [Azure AI Foundry and Document Intelligence](docs/deployment/azure-ai-foundry-setup.md)
 - [Environment variables](docs/deployment/environment-variables.md)
 
+Terraform helper for the live environment:
+
+```powershell
+cd terraform/azure/aks
+powershell -ExecutionPolicy Bypass -File .\dev-workspace.ps1 -Action init
+powershell -ExecutionPolicy Bypass -File .\dev-workspace.ps1 -Action plan
+```
+
+GitHub Actions path for the same live environment:
+
+- workflow file: `.github/workflows/terraform-dev.yml`
+- PRs into `main` plan from branches named `terraform/*`
+- pushes to `main` apply against the live `dev` Terraform workspace
+- Azure auth uses Microsoft Entra OIDC, so there is no client secret to store in GitHub
+- the workflow signs into Azure, refreshes the `dev` kubeconfig, and then calls the same `dev-workspace.ps1` helper used locally
+
 Authentication note:
 
 - Work or school accounts are grouped by their Entra tenant ID.
@@ -89,10 +105,12 @@ Authentication note:
 
 Current validated Azure posture:
 
-- Front Door forwards to the AKS gateway over `HTTPS`, not `HTTP`.
-- The gateway `LoadBalancer` service exposes both `80` and `443`, with the HTTPS listener terminated by a Terraform-managed origin certificate secret.
+- Front Door terminates browser HTTPS at the edge and currently forwards to the AKS gateway over `HTTP`.
+- The Front Door origin is pinned to the gateway public IP's Azure cloudapp FQDN instead of the raw IP because that was the validated stable path for origin health checks and routing.
+- Terraform can now bind validated apex and `www` custom-domain IDs to separate Front Door routes plus the shared WAF security policy once those domain resources exist in Azure.
 - PostgreSQL now runs as `GP_Standard_D2s_v3` in `Central India` with `ZoneRedundant` HA and geo-redundant backup enabled.
 - Blob Storage defaults the account to OAuth auth for the application path, while shared-key auth remains enabled only so the current AzureRM/Terraform path can keep managing the account safely.
+- `myfinagent.online` and `www.myfinagent.online` still require manual DNS validation and Front Door custom-domain creation, but the validated live shape is now represented in Terraform as apex on the primary route and `www` on its own dedicated Front Door route.
 
 ## AI context
 

@@ -17,11 +17,12 @@ Latest major refactor:
 13. forced explicit account selection on Microsoft login so cached browser sessions do not silently reuse the wrong tenant user
 14. fixed document extraction persistence so Decimal invoice totals from Document Intelligence or Foundry do not trigger PostgreSQL JSON serialization errors
 15. corrected auth bootstrap so guest Microsoft accounts inside a real Entra tenant join that tenant workspace instead of being split into separate personal workspaces
-16. moved Front Door origin forwarding from HTTP to HTTPS and added a Terraform-managed gateway TLS secret so the AKS gateway exposes port `443`
+16. tested a Front Door HTTPS-origin path with a Terraform-managed gateway TLS secret, then finalized the validated default on HTTP origin plus an Azure cloudapp FQDN override because Front Door would not reliably accept the self-signed origin certificate
 17. added a Front Door WAF auth rate-limit rule on `/api/auth`
 18. uplifted PostgreSQL from Burstable to `GP_Standard_D2s_v3` and enabled `ZoneRedundant` HA plus geo-redundant backup
 19. kept Blob Storage on OAuth-first auth with local users disabled, while re-enabling shared-key auth only to preserve Terraform/AzureRM storage-account management compatibility
 20. modeled the PostgreSQL subnet storage service endpoint in Terraform so the live deployment returns a clean plan after the HA hardening pass
+21. switched the stable Front Door origin target to the gateway public IP's Azure cloudapp FQDN and modeled the validated apex-plus-dedicated-www custom-domain routing shape back into Terraform
 
 Intentional simplification kept:
 

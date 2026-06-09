@@ -80,17 +80,17 @@ Front Door:
 
 - SKU: Premium
 - WAF: attach to the endpoint
-- origin protocol: HTTPS to the AKS gateway LoadBalancer
-- health probe protocol: HTTPS
+- origin protocol: HTTP to the AKS gateway LoadBalancer
+- health probe protocol: HTTP
 - health probe path: `/health`
 - route pattern: `/*`
 - add a custom WAF rate-limit rule for `/api/auth`
+- prefer an Azure DNS name on the gateway public IP, then use that FQDN as the Front Door origin host and origin host header
 
 Gateway:
 
-- expose both port `80` and port `443` on the public `LoadBalancer` service
-- add a TLS listener on `443`
-- a self-signed origin certificate is acceptable for this topology if Front Door origin certificate name checks remain disabled
+- expose port `80` on the public `LoadBalancer` service for the validated default path
+- only add a TLS listener on `443` if you also supply a publicly trusted origin certificate
 
 ## Manual Entra setup
 
@@ -156,9 +156,13 @@ Important:
 Terraform and the portal do not control Hostinger. After Front Door is up:
 
 1. Add `myfinagent.online` as a custom domain on Front Door.
-2. Create the required DNS validation record in Hostinger.
-3. Point the domain to the Front Door hostname.
-4. Wait for certificate issuance and route propagation.
+2. Add `www.myfinagent.online` as a second custom domain on Front Door.
+3. Create the required DNS validation record in Hostinger for each custom domain.
+4. Point both hostnames to the Front Door hostname.
+5. Record the Azure resource IDs of both Front Door custom domains so Terraform can bind them to the right routes and WAF association later.
+6. Attach `myfinagent.online` to the primary Front Door route.
+7. If `www.myfinagent.online` still serves the Azure `404 CONFIG_NOCACHE` page on the shared route, create a dedicated `www` Front Door route and attach only `www.myfinagent.online` to it.
+8. Wait for certificate issuance and route propagation.
 
 ## Trustworthy manual checks
 
