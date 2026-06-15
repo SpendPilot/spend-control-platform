@@ -14,10 +14,8 @@ Production auth model:
 Role model:
 
 - `platform_admin`
-- `org_admin`
-- `finance_manager`
-- `approver`
-- `auditor`
+- `org_owner`
+- `dept_head`
 - `employee`
 
 Bootstrap behavior:
@@ -25,10 +23,16 @@ Bootstrap behavior:
 - one organization is created per Entra tenant ID for workforce accounts
 - one isolated workspace is created per true Microsoft consumer-tenant account
 - guest Microsoft accounts invited into a workforce tenant stay inside that tenant workspace
-- the first user from a tenant becomes `org_admin`
+- the first user from a tenant becomes `org_owner`
 - platform admins can also be injected with `PLATFORM_ADMIN_EMAILS`
 - end users do not need pre-registration in the app; first successful sign-in bootstraps the account automatically
 - external customer-tenant service principals are created by consent in that tenant, not directly by Terraform in the home tenant
+
+2026-06-15 Phase 1 note:
+
+- later users in the same tenant now default to `employee`
+- employee onboarding requires department selection before workspace access
+- role normalization still accepts legacy role names during transition
 
 Dev fallback:
 

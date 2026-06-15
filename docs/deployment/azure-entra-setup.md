@@ -14,11 +14,10 @@ Backend API registration:
 - pre-authorized applications: include the frontend SPA app with the `access_as_user` permission scope
 - app roles:
   - `platform_admin`
-  - `org_admin`
-  - `finance_manager`
-  - `approver`
-  - `auditor`
+  - `org_owner`
+  - `dept_head`
   - `employee`
+  - legacy aliases such as `org_admin`, `finance_manager`, `approver`, and `auditor` may still appear in older environments, but the product now canonicalizes memberships to `org_owner`, `dept_head`, and `employee`
 
 Frontend SPA registration:
 
@@ -49,4 +48,4 @@ The app uses delegated user access, not a broad application identity for end-use
 - users sign in with Microsoft and obtain the backend `access_as_user` scope
 - the backend maps the token to a tenant-scoped organization membership
 - all finance and document queries are filtered by `organization_id`
-- role checks such as `org_admin`, `finance_manager`, `approver`, and `employee` then decide which resources and actions are allowed within that tenant
+- role checks such as `org_owner`, `dept_head`, and `employee` then decide which resources and actions are allowed within that tenant

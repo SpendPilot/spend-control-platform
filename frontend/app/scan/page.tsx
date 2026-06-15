@@ -74,18 +74,18 @@ export default function ScanPage() {
 
       if (createExpenseDraft && extracted.total_amount) {
         setStatus("Creating draft expense...");
-        await apiFetch("/api/finance/expenses", {
+        await apiFetch("/api/finance/expenses/variable", {
           method: "POST",
           token,
           body: JSON.stringify({
             title: extracted.vendor_name || file.name,
             vendor_name: extracted.vendor_name,
-            invoice_number: extracted.invoice_number,
             document_id: documentId,
             currency: extracted.currency || profile?.organization.default_currency || "INR",
             amount: extracted.total_amount,
             expense_date: extracted.invoice_date || new Date().toISOString().slice(0, 10),
             description: extracted.summary,
+            category_id: "",
           }),
         });
         setStatus("Draft expense created from the uploaded document.");

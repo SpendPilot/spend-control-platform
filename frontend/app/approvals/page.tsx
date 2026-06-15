@@ -27,7 +27,7 @@ export default function ApprovalsPage() {
   function load() {
     if (!token) return;
     setLoading(true);
-    apiFetch<ExpenseItem[]>("/api/finance/expenses", { token })
+    apiFetch<ExpenseItem[]>("/api/finance/expenses/variable", { token })
       .then(setItems)
       .catch((err) => setError(getApiError(err)))
       .finally(() => setLoading(false));
@@ -37,7 +37,10 @@ export default function ApprovalsPage() {
     load();
   }, [token]);
 
-  const pending = useMemo(() => items.filter((item) => item.status === "submitted"), [items]);
+  const pending = useMemo(
+    () => items.filter((item) => item.status.includes("pending") || item.status.includes("forwarded")),
+    [items],
+  );
 
   async function handleAction(expenseId: string, action: "approve" | "reject") {
     if (!token) return;
@@ -62,10 +65,7 @@ export default function ApprovalsPage() {
   if (!pending.length) {
     return (
       <AppShell>
-        <EmptyState
-          title="Approval queue is clear"
-          description={`Nothing is waiting for ${profile?.effective_role || "your"} review right now.`}
-        />
+        <EmptyState title="Approval queue is clear" description={`Nothing is waiting for ${profile?.effective_role || "your"} review right now.`} />
       </AppShell>
     );
   }
@@ -73,10 +73,7 @@ export default function ApprovalsPage() {
   return (
     <AppShell>
       <div className="space-y-6">
-        <PageHeader
-          title="Approvals"
-          description="Pending expenses that still need an approver, finance manager, or organization admin decision."
-        />
+        <PageHeader title="Approvals" description="Variable expenses that still need a department head or organization owner decision." />
         <div className="grid gap-4">
           {pending.map((item) => (
             <div key={item.id} className="panel p-6">
@@ -84,7 +81,7 @@ export default function ApprovalsPage() {
                 <div>
                   <div className="font-display text-2xl">{item.title}</div>
                   <div className="mt-2 text-sm text-slate-500">
-                    {item.vendor_name || "Vendor pending"} · {new Date(item.expense_date).toLocaleDateString()}
+                    {item.vendor_name || "Vendor pending"} • {new Date(item.expense_date).toLocaleDateString()}
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">

@@ -8,8 +8,8 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.rbac import ROLE_EMPLOYEE, ROLE_ORG_ADMIN, ROLE_PLATFORM_ADMIN, derive_highest_role, normalize_role
-from app.models import ExpenseCategory, Organization, OrganizationMembership, User, UserSession
+from app.core.rbac import ROLE_DEPT_HEAD, ROLE_EMPLOYEE, ROLE_ORG_OWNER, ROLE_PLATFORM_ADMIN, derive_highest_role, normalize_role
+from app.models import Department, ExpenseCategory, Organization, OrganizationMembership, User, UserSession
 
 MICROSOFT_CONSUMER_TENANT_ID = "9188040d-6c67-4c5b-b112-36a304b66dad"
 PERSONAL_ACCOUNT_TENANT_PREFIX = "msa"
@@ -21,6 +21,12 @@ DEFAULT_CATEGORIES = [
     ("office", "Office Supplies"),
     ("marketing", "Marketing"),
     ("professional-services", "Professional Services"),
+]
+
+DEFAULT_DEPARTMENTS = [
+    ("IT", "Technology, systems, and infrastructure operations."),
+    ("Marketing", "Demand generation, brand, and growth spend."),
+    ("HR", "People operations, recruiting, and workplace support."),
 ]
 
 
@@ -94,10 +100,10 @@ def _default_membership_role(db: Session, organization: Organization, payload: d
         OrganizationMembership.organization_id == organization.id
     ).count()
     if member_count == 0:
-        return ROLE_ORG_ADMIN
+        return ROLE_ORG_OWNER
     if token_role == ROLE_PLATFORM_ADMIN:
-        return ROLE_ORG_ADMIN
-    return token_role or ROLE_EMPLOYEE
+        return ROLE_ORG_OWNER
+    return ROLE_EMPLOYEE
 
 
 def _build_unique_org_slug(db: Session, org_name: str, tenant_id: str) -> str:
@@ -123,6 +129,25 @@ def _seed_default_categories(db: Session, organization: Organization) -> None:
                 name=name,
             )
         )
+
+
+def ensure_default_departments(db: Session, organization: Organization) -> list[Department]:
+    existing = {
+        department.name.lower(): department
+        for department in db.query(Department).filter(Department.organization_id == organization.id).all()
+    }
+    for name, description in DEFAULT_DEPARTMENTS:
+        if name.lower() in existing:
+            continue
+        department = Department(
+            organization_id=organization.id,
+            name=name,
+            description=description,
+        )
+        db.add(department)
+        db.flush()
+        existing[name.lower()] = department
+    return list(existing.values())
 
 
 def get_user_from_principal(db: Session, user_id: str) -> User | None:
@@ -185,6 +210,9 @@ def sync_user_context_from_claims(
         db.add(organization)
         db.flush()
         _seed_default_categories(db, organization)
+        ensure_default_departments(db, organization)
+    else:
+        ensure_default_departments(db, organization)
 
     membership = (
         db.query(OrganizationMembership)
@@ -195,12 +223,20 @@ def sync_user_context_from_claims(
         .first()
     )
     if membership is None:
+        role = _default_membership_role(db, organization, payload)
         membership = OrganizationMembership(
             organization_id=organization.id,
             user_id=user.id,
-            role=_default_membership_role(db, organization, payload),
+            role=role,
+            onboarding_completed=role == ROLE_ORG_OWNER,
         )
         db.add(membership)
+    else:
+        normalized_role = normalize_role(membership.role)
+        if membership.role != normalized_role:
+            membership.role = normalized_role
+        if membership.role == ROLE_ORG_OWNER and not membership.onboarding_completed:
+            membership.onboarding_completed = True
 
     issued_at, expires_at = _session_times(payload)
     session = db.query(UserSession).filter(UserSession.session_fingerprint == session_fingerprint).first()
@@ -253,11 +289,67 @@ def list_memberships(db: Session, organization_id: str) -> list[OrganizationMemb
     )
 
 
-def update_membership_role(db: Session, membership_id: str, role: str) -> OrganizationMembership | None:
-    membership = db.query(OrganizationMembership).filter(OrganizationMembership.id == membership_id).first()
-    if membership is None:
+def list_departments(db: Session, organization_id: str) -> list[Department]:
+    return (
+        db.query(Department)
+        .filter(Department.organization_id == organization_id)
+        .order_by(Department.name.asc())
+        .all()
+    )
+
+
+def get_membership_within_organization(db: Session, organization_id: str, membership_id: str) -> OrganizationMembership | None:
+    return (
+        db.query(OrganizationMembership)
+        .filter(
+            OrganizationMembership.id == membership_id,
+            OrganizationMembership.organization_id == organization_id,
+        )
+        .first()
+    )
+
+
+def get_department_within_organization(db: Session, organization_id: str, department_id: str) -> Department | None:
+    return (
+        db.query(Department)
+        .filter(
+            Department.id == department_id,
+            Department.organization_id == organization_id,
+        )
+        .first()
+    )
+
+
+def get_department_head_membership(
+    db: Session,
+    organization_id: str,
+    department_id: str,
+    *,
+    exclude_membership_id: str | None = None,
+) -> OrganizationMembership | None:
+    query = db.query(OrganizationMembership).filter(
+        OrganizationMembership.organization_id == organization_id,
+        OrganizationMembership.department_id == department_id,
+        OrganizationMembership.role == ROLE_DEPT_HEAD,
+        OrganizationMembership.status == "active",
+    )
+    if exclude_membership_id:
+        query = query.filter(OrganizationMembership.id != exclude_membership_id)
+    return query.first()
+
+
+def assign_membership_department(
+    db: Session,
+    organization_id: str,
+    membership_id: str,
+    department_id: str,
+) -> OrganizationMembership | None:
+    membership = get_membership_within_organization(db, organization_id, membership_id)
+    department = get_department_within_organization(db, organization_id, department_id)
+    if membership is None or department is None:
         return None
-    membership.role = normalize_role(role)
+    membership.department_id = department.id
+    membership.onboarding_completed = True
     db.commit()
     db.refresh(membership)
     return membership

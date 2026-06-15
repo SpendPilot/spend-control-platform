@@ -14,7 +14,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
-from app.core.rbac import APPROVAL_ROLES, FINANCE_WRITE_ROLES, ORG_READ_ROLES
+from app.core.rbac import APPROVAL_ROLES, FINANCE_WRITE_ROLES, ORG_READ_ROLES, normalize_role
 from app.db.session import get_db
 from app.services.user_service import MICROSOFT_CONSUMER_TENANT_ID
 from app.services.user_service import sync_user_context_from_claims
@@ -35,6 +35,10 @@ class AuthenticatedPrincipal:
     organization_name: str
     organization_slug: str
     default_currency: str
+    membership_status: str
+    department_id: str | None
+    department_name: str | None
+    onboarding_completed: bool
     tenant_id: str | None
     entra_oid: str | None
     session_id: str
@@ -115,13 +119,13 @@ def get_entra_validator() -> EntraTokenValidator:
     return EntraTokenValidator(get_settings())
 
 
-def create_dev_access_token(email: str, display_name: str, role: str) -> str:
+def create_dev_access_token(email: str, display_name: str, role: str, tenant_id: str = "local-dev-tenant") -> str:
     settings = get_settings()
     now = datetime.now(UTC)
     payload = {
         "sub": email,
         "oid": f"dev-{email}",
-        "tid": "local-dev-tenant",
+        "tid": tenant_id,
         "email": email,
         "preferred_username": email,
         "name": display_name,
@@ -190,7 +194,10 @@ def get_current_principal(
 
     effective_role = auth_context.user.platform_role
     if effective_role != "platform_admin":
-        effective_role = auth_context.membership.role
+        effective_role = normalize_role(auth_context.membership.role)
+
+    if auth_context.membership.status != "active":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Membership is inactive")
 
     return AuthenticatedPrincipal(
         user_id=auth_context.user.id,
@@ -203,6 +210,10 @@ def get_current_principal(
         organization_name=auth_context.organization.name,
         organization_slug=auth_context.organization.slug,
         default_currency=auth_context.organization.default_currency,
+        membership_status=auth_context.membership.status,
+        department_id=auth_context.membership.department_id,
+        department_name=auth_context.membership.department.name if auth_context.membership.department else None,
+        onboarding_completed=auth_context.membership.onboarding_completed,
         tenant_id=auth_context.organization.tenant_id,
         entra_oid=auth_context.user.entra_oid,
         session_id=auth_context.session.id,

@@ -33,7 +33,11 @@ class DocumentService:
             .filter(Document.organization_id == principal.organization_id)
             .order_by(Document.created_at.desc())
         )
-        if principal.role not in ORG_READ_ROLES:
+        if principal.role in ORG_READ_ROLES:
+            pass
+        elif principal.role == "dept_head":
+            query = query.filter(Document.department_id == principal.department_id)
+        else:
             query = query.filter(Document.owner_user_id == principal.user_id)
 
         results: list[DocumentListItem] = []
@@ -75,6 +79,7 @@ class DocumentService:
         document = Document(
             organization_id=principal.organization_id,
             owner_user_id=principal.user_id,
+            department_id=principal.department_id,
             expense_id=linked_expense_id,
             filename=upload.filename or "document.bin",
             content_type=upload.content_type or "application/octet-stream",
@@ -82,6 +87,8 @@ class DocumentService:
             storage_kind=stored.storage_kind,
             storage_path=stored.storage_path,
             storage_url=stored.storage_url,
+            linked_expense_type="variable_expense" if linked_expense_id else None,
+            linked_expense_id=linked_expense_id,
             status="uploaded",
             metadata_json={"uploaded_by": principal.email},
         )
@@ -108,7 +115,11 @@ class DocumentService:
         )
         if document is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
-        if principal.role not in ORG_READ_ROLES and document.owner_user_id != principal.user_id:
+        if principal.role in ORG_READ_ROLES:
+            return document
+        if principal.role == "dept_head" and document.department_id == principal.department_id:
+            return document
+        if document.owner_user_id != principal.user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
         return document
 

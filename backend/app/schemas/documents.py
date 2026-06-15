@@ -39,12 +39,15 @@ class DocumentOut(BaseModel):
     id: str
     organization_id: str
     owner_user_id: str
+    department_id: str | None
     expense_id: str | None
     filename: str
     content_type: str
     file_size_bytes: int
     storage_kind: str
     storage_url: str | None
+    linked_expense_type: str | None
+    linked_expense_id: str | None
     status: str
     extracted_text: str | None
     metadata_json: dict[str, Any] | None

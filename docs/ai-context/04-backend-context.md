@@ -17,6 +17,7 @@ Important modules:
 - `app/services/finance_service.py`
 - `app/services/document_service.py`
 - `app/services/ai_foundry_service.py`
+- `app/services/ai_chat_service.py`
 
 Key responsibilities:
 
@@ -25,5 +26,17 @@ Key responsibilities:
 - persist user sessions
 - enforce RBAC
 - manage budgets, expenses, approvals, and audit data
+- manage recurring expenses, recurring requests, spend limits, and payment priorities
 - extract OCR text and invoice fields
 - analyze documents with Azure AI Foundry
+- persist tenant-scoped AI chat sessions and grounded assistant messages
+
+2026-06-15 Phase 1 note:
+
+- membership roles are being canonicalized toward `org_owner`, `dept_head`, and `employee`
+- organization-scoped departments and onboarding state now live on `organization_memberships`
+- auth and admin routes now expose department listing, onboarding completion, and org-owner member-management updates
+
+2026-06-15 continued refactor note:
+
+- the backend now exposes role-aware payment-operations APIs for variable expenses, recurring expenses, recurring requests, spend limits, payment priorities, and AI chat

@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     )
     dev_auth_default_email: str = Field(default="developer@local.test", alias="DEV_AUTH_DEFAULT_EMAIL")
     dev_auth_default_name: str = Field(default="Local Developer", alias="DEV_AUTH_DEFAULT_NAME")
-    dev_auth_default_role: str = Field(default="org_admin", alias="DEV_AUTH_DEFAULT_ROLE")
+    dev_auth_default_role: str = Field(default="org_owner", alias="DEV_AUTH_DEFAULT_ROLE")
     access_token_expire_minutes: int = Field(default=60, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
 
     azure_ai_foundry_endpoint: str = Field(default="", alias="AZURE_AI_FOUNDRY_ENDPOINT")

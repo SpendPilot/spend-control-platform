@@ -14,6 +14,7 @@ type DocumentItem = {
     filename: string;
     status: string;
     created_at: string;
+    linked_expense_type?: string | null;
   };
   latest_scan?: {
     risk_level: string;
@@ -35,14 +36,14 @@ export default function DocumentsPage() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  if (loading) return <LoadingState label="Loading documents..." />;
+  if (loading) return <LoadingState label="Loading bills library..." />;
   if (error) return <ErrorState label={error} />;
   if (!items.length) {
     return (
       <AppShell>
         <EmptyState
-          title="No documents uploaded"
-          description="Use the Scan page to upload a policy, contract, invoice, or supporting document."
+          title="No bills uploaded"
+          description="Upload invoices, receipts, or supporting bills to start the payment workflow."
         />
       </AppShell>
     );
@@ -52,8 +53,8 @@ export default function DocumentsPage() {
     <AppShell>
       <div className="space-y-6">
         <PageHeader
-          title="Documents"
-          description="Receipts, invoices, and supporting files stay linked to the finance workspace and keep the latest AI scan attached."
+          title="Bills Library"
+          description="Uploaded bills with extraction status, linked workflow context, and latest scan output."
         />
         <div className="grid gap-4">
           {items.map((item) => (
@@ -67,6 +68,7 @@ export default function DocumentsPage() {
                   <div className="font-display text-2xl">{item.document.filename}</div>
                   <div className="mt-2 text-sm text-slate-500">
                     Uploaded {new Date(item.document.created_at).toLocaleString()}
+                    {item.document.linked_expense_type ? ` • ${item.document.linked_expense_type}` : ""}
                   </div>
                 </div>
                 <div className="rounded-full bg-slate-100 px-4 py-2 text-xs uppercase tracking-[0.25em] dark:bg-slate-800">

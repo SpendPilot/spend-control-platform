@@ -48,5 +48,5 @@ def test_second_user_in_same_tenant_defaults_to_employee() -> None:
         second_role = second.membership.role
 
     assert first_org_id == second_org_id
-    assert first_role == "org_admin"
+    assert first_role == "org_owner"
     assert second_role == "employee"

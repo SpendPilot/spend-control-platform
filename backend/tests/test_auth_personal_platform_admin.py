@@ -66,7 +66,7 @@ def test_personal_account_bootstraps_isolated_workspace(monkeypatch) -> None:
     assert context.user.platform_role == "platform_admin"
     assert context.organization.tenant_id.startswith(f"{PERSONAL_ACCOUNT_TENANT_PREFIX}:")
     assert context.organization.name == "Platform Owner Workspace"
-    assert context.membership.role == "org_admin"
+    assert context.membership.role == "org_owner"
 
 
 def test_personal_accounts_do_not_share_the_consumer_tenant_workspace(monkeypatch) -> None:
@@ -99,8 +99,8 @@ def test_personal_accounts_do_not_share_the_consumer_tenant_workspace(monkeypatc
 
     assert first_org_id != second_org_id
     assert first_tenant_id != second_tenant_id
-    assert first_role == "org_admin"
-    assert second_role == "org_admin"
+    assert first_role == "org_owner"
+    assert second_role == "org_owner"
 
     os.environ.pop("PLATFORM_ADMIN_EMAILS", None)
     get_settings.cache_clear()

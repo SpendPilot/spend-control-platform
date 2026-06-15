@@ -23,6 +23,9 @@ Latest major refactor:
 19. kept Blob Storage on OAuth-first auth with local users disabled, while re-enabling shared-key auth only to preserve Terraform/AzureRM storage-account management compatibility
 20. modeled the PostgreSQL subnet storage service endpoint in Terraform so the live deployment returns a clean plan after the HA hardening pass
 21. switched the stable Front Door origin target to the gateway public IP's Azure cloudapp FQDN and modeled the validated apex-plus-dedicated-www custom-domain routing shape back into Terraform
+22. added Phase 1 product-refactor identity changes: canonical `org_owner` / `dept_head` / `employee` membership roles, default departments, employee onboarding state, and org-owner membership management guardrails
+23. extended the finance data model and APIs for recurring expenses, recurring requests, spend limits, payment priorities, AI chat sessions, and richer budget / bill linkage
+24. converted the existing frontend into a role-aware payment-operations baseline with org-owner, dept-head, and employee workspaces
 
 Intentional simplification kept:
 

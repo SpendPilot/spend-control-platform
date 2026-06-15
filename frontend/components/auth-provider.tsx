@@ -26,8 +26,15 @@ type AuthProfile = {
   };
   membership: {
     id: string;
+    department_id?: string | null;
+    onboarding_completed: boolean;
     role: string;
     status: string;
+    department?: {
+      id: string;
+      name: string;
+      description?: string | null;
+    } | null;
   };
   session: {
     id: string;

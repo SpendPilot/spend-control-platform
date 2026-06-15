@@ -10,17 +10,18 @@ import { apiFetch, getApiError } from "@/lib/api";
 type BudgetItem = {
   id: string;
   name: string;
+  scope: string;
   amount: number;
   currency: string;
-  start_date: string;
-  end_date: string;
-  alert_threshold_percent: number;
+  month?: number | null;
+  year?: number | null;
   spent_amount: number;
-  category?: { name: string } | null;
+  remaining_amount: number;
+  department?: { name: string } | null;
 };
 
 export default function BudgetsPage() {
-  const { token } = useAuth();
+  const { token, profile } = useAuth();
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +37,8 @@ export default function BudgetsPage() {
   const totals = useMemo(() => {
     const budgeted = items.reduce((sum, item) => sum + Number(item.amount), 0);
     const consumed = items.reduce((sum, item) => sum + Number(item.spent_amount), 0);
-    return { budgeted, consumed };
+    const remaining = items.reduce((sum, item) => sum + Number(item.remaining_amount), 0);
+    return { budgeted, consumed, remaining };
   }, [items]);
 
   if (loading) return <LoadingState label="Loading budgets..." />;
@@ -44,56 +46,54 @@ export default function BudgetsPage() {
   if (!items.length) {
     return (
       <AppShell>
-        <EmptyState
-          title="No budgets configured"
-          description="Create a budget through the finance API or bootstrap one during onboarding."
-        />
+        <EmptyState title="No budgets configured" description="Create company or department budgets to start spend tracking." />
       </AppShell>
     );
   }
 
+  const title = profile?.effective_role === "org_owner" ? "Budgets" : `${profile?.membership.department?.name || "Department"} Budget`;
+  const description =
+    profile?.effective_role === "org_owner"
+      ? "Company and department monthly budgets with used and remaining amounts."
+      : "Your department budget visibility for the current tenant.";
+
   return (
     <AppShell>
       <div className="space-y-6">
-        <PageHeader
-          title="Budgets"
-          description="Active controls for planned spend versus approved spend by budget window and category."
-        />
-        <div className="grid gap-4 md:grid-cols-2">
+        <PageHeader title={title} description={description} />
+        <div className="grid gap-4 md:grid-cols-3">
           <div className="panel p-6">
-            <div className="text-sm uppercase tracking-[0.25em] text-slate-400">Planned</div>
+            <div className="text-sm uppercase tracking-[0.25em] text-slate-400">Budgeted</div>
             <div className="mt-3 font-display text-4xl">INR {totals.budgeted.toFixed(2)}</div>
           </div>
           <div className="panel p-6">
-            <div className="text-sm uppercase tracking-[0.25em] text-slate-400">Consumed</div>
+            <div className="text-sm uppercase tracking-[0.25em] text-slate-400">Used</div>
             <div className="mt-3 font-display text-4xl">INR {totals.consumed.toFixed(2)}</div>
+          </div>
+          <div className="panel p-6">
+            <div className="text-sm uppercase tracking-[0.25em] text-slate-400">Remaining</div>
+            <div className="mt-3 font-display text-4xl">INR {totals.remaining.toFixed(2)}</div>
           </div>
         </div>
         <div className="grid gap-4">
-          {items.map((item) => {
-            const utilization = item.amount ? (Number(item.spent_amount) / Number(item.amount)) * 100 : 0;
-            return (
-              <div key={item.id} className="panel p-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <div className="font-display text-2xl">{item.name}</div>
-                    <div className="mt-2 text-sm text-slate-500">
-                      {item.category?.name || "All categories"} · {new Date(item.start_date).toLocaleDateString()} to{" "}
-                      {new Date(item.end_date).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-display text-2xl">
-                      {item.currency} {Number(item.spent_amount).toFixed(2)} / {Number(item.amount).toFixed(2)}
-                    </div>
-                    <div className="mt-2 text-sm text-slate-500">
-                      Threshold {item.alert_threshold_percent}% · Utilization {utilization.toFixed(1)}%
-                    </div>
+          {items.map((item) => (
+            <div key={item.id} className="panel p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <div className="font-display text-2xl">{item.name}</div>
+                  <div className="mt-2 text-sm text-slate-500">
+                    {item.scope} {item.department ? `• ${item.department.name}` : ""} {item.month && item.year ? `• ${item.month}/${item.year}` : ""}
                   </div>
                 </div>
+                <div className="text-right">
+                  <div className="font-display text-2xl">
+                    {item.currency} {Number(item.spent_amount).toFixed(2)} / {Number(item.amount).toFixed(2)}
+                  </div>
+                  <div className="mt-2 text-sm text-slate-500">Remaining {item.currency} {Number(item.remaining_amount).toFixed(2)}</div>
+                </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
     </AppShell>

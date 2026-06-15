@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AppShell } from "@/components/app-shell";
 import { ChartPanel, MetricStrip } from "@/components/charts";
@@ -11,19 +11,21 @@ import { apiFetch, getApiError } from "@/lib/api";
 type DashboardOut = {
   organization_name: string;
   role: string;
-  total_expenses: number;
-  approved_spend: number;
-  submitted_spend: number;
+  total_spend_this_month: number;
+  recurring_spend_this_month: number;
+  variable_spend_this_month: number;
   pending_approvals: number;
-  budgets: {
-    budget_id: string;
-    name: string;
-    limit_amount: number;
-    consumed_amount: number;
-    utilization_percent: number;
-    threshold_percent: number;
-  }[];
+  approved_expenses: number;
+  rejected_expenses: number;
+  company_budget_used: number;
+  company_budget_remaining: number;
+  upcoming_payment_count: number;
+  cash_outflow_this_week: number;
+  cash_outflow_this_month: number;
+  budgets: { id: string; name: string; scope: string; amount: number; spent_amount: number; remaining_amount: number }[];
   category_breakdown: { category: string; amount: number }[];
+  department_breakdown: { department: string; amount: number }[];
+  payment_priorities: { id: string; label: string; amount: number; priority: string; reason: string }[];
 };
 
 export default function DashboardPage() {
@@ -40,63 +42,84 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, [token]);
 
-  const metrics = useMemo(() => {
-    if (!dashboard) return [];
-    return [
-      { label: "Approved Spend", value: Number(dashboard.approved_spend) },
-      { label: "Submitted Spend", value: Number(dashboard.submitted_spend) },
-      { label: "Expenses", value: dashboard.total_expenses },
-      { label: "Pending", value: dashboard.pending_approvals },
-      { label: "Budgets", value: dashboard.budgets.length },
-      {
-        label: "Budget Alerts",
-        value: dashboard.budgets.filter((item) => item.utilization_percent >= item.threshold_percent).length,
-      },
-    ];
-  }, [dashboard]);
-
   if (loading) return <LoadingState label="Loading dashboard..." />;
   if (error) return <ErrorState label={error} />;
   if (!dashboard) {
     return (
       <AppShell>
-        <EmptyState
-          title="No finance data yet"
-          description="Create a budget or submit your first expense to start building your finance workspace."
-        />
+        <EmptyState title="No spend data yet" description="Create budgets, upload bills, or submit expenses to start the workspace." />
       </AppShell>
     );
   }
 
+  const ownerMetrics = [
+    { label: "Total Spend", value: Number(dashboard.total_spend_this_month) },
+    { label: "Recurring", value: Number(dashboard.recurring_spend_this_month) },
+    { label: "Variable", value: Number(dashboard.variable_spend_this_month) },
+    { label: "Pending", value: dashboard.pending_approvals },
+    { label: "Cash This Week", value: Number(dashboard.cash_outflow_this_week) },
+    { label: "Cash This Month", value: Number(dashboard.cash_outflow_this_month) },
+  ];
+  const deptMetrics = [
+    { label: "Pending", value: dashboard.pending_approvals },
+    { label: "Approved", value: dashboard.approved_expenses },
+    { label: "Rejected", value: dashboard.rejected_expenses },
+    { label: "Upcoming", value: dashboard.upcoming_payment_count },
+  ];
+  const title =
+    profile?.effective_role === "org_owner"
+      ? `${dashboard.organization_name} payment operations`
+      : profile?.effective_role === "dept_head"
+        ? `${profile.membership.department?.name || "Department"} dashboard`
+        : `${profile?.membership.department?.name || "Department"} budget view`;
+  const description =
+    profile?.effective_role === "org_owner"
+      ? "Company-wide spend, approvals, budgets, and payment timing for the current tenant."
+      : profile?.effective_role === "dept_head"
+        ? "Department-scoped budget, requests, and upcoming spend visibility."
+        : "A focused view of your department budget and current spending pressure.";
+
   return (
     <AppShell>
       <div className="space-y-6">
-        <PageHeader
-          title={`${dashboard.organization_name} overview`}
-          description={`Current role: ${profile?.effective_role}. Spend, budget, and approval signals are combined here for one tenant-aware operating view.`}
-        />
-        <MetricStrip metrics={metrics} />
+        <PageHeader title={title} description={description} />
+        <MetricStrip metrics={profile?.effective_role === "org_owner" ? ownerMetrics : deptMetrics} />
         <div className="grid gap-6 xl:grid-cols-2">
           <ChartPanel
-            title="Budget utilization"
+            title={profile?.effective_role === "org_owner" ? "Department-wise spend" : "Budget usage"}
             kind="bar"
-            data={dashboard.budgets.map((item) => ({
-              category: item.name,
-              total: item.utilization_percent,
-            }))}
+            data={
+              profile?.effective_role === "org_owner"
+                ? dashboard.department_breakdown.map((item) => ({ category: item.department, total: Number(item.amount) }))
+                : dashboard.budgets.map((item) => ({ category: item.name, total: Number(item.spent_amount) }))
+            }
             xKey="category"
             yKey="total"
           />
           <ChartPanel
-            title="Approved spend by category"
+            title={profile?.effective_role === "org_owner" ? "Category-wise spend" : "Payment pressure"}
             kind="bar"
-            data={dashboard.category_breakdown.map((item) => ({
-              category: item.category,
-              total: Number(item.amount),
-            }))}
+            data={
+              profile?.effective_role === "org_owner"
+                ? dashboard.category_breakdown.map((item) => ({ category: item.category, total: Number(item.amount) }))
+                : dashboard.payment_priorities.map((item) => ({ category: item.priority, total: Number(item.amount) }))
+            }
             xKey="category"
             yKey="total"
           />
+        </div>
+        <div className="grid gap-4">
+          {dashboard.payment_priorities.slice(0, 5).map((item) => (
+            <div key={item.id} className="panel p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <div className="font-medium">{item.label}</div>
+                  <div className="mt-1 text-sm text-slate-500">{item.reason}</div>
+                </div>
+                <div className="text-sm uppercase tracking-[0.2em] text-slate-500">{item.priority}</div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </AppShell>

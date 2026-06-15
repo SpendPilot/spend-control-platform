@@ -13,13 +13,26 @@ class OrganizationOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DepartmentOut(BaseModel):
+    id: str
+    organization_id: str
+    name: str
+    description: str | None
+
+    model_config = {"from_attributes": True}
+
+
 class MembershipOut(BaseModel):
     id: str
     organization_id: str
     user_id: str
+    department_id: str | None
     role: str
     status: str
     cost_center: str | None
+    onboarding_completed: bool
+    department: DepartmentOut | None = None
+    user: "UserOut | None" = None
     created_at: datetime
     updated_at: datetime
 
@@ -67,12 +80,22 @@ class DevLoginRequest(BaseModel):
     email: EmailStr | None = None
     display_name: str | None = None
     role: str | None = None
+    tenant_id: str | None = None
 
 
 class MembershipRoleUpdateRequest(BaseModel):
-    role: str
+    role: str | None = None
+    department_id: str | None = None
+    status: str | None = None
+
+
+class DepartmentSelectionRequest(BaseModel):
+    department_id: str
 
 
 class AuthResponse(BaseModel):
     access_token: str
     profile: AuthProfileOut
+
+
+MembershipOut.model_rebuild()

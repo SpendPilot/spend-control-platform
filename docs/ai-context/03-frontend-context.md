@@ -17,9 +17,13 @@ Pages now kept:
 - `/dashboard`
 - `/expenses`
 - `/approvals`
+- `/spend-limits`
+- `/payment-priority`
+- `/ai-insights`
 - `/budgets`
 - `/documents`
 - `/documents/[id]`
+- `/profile`
 - `/scan`
 - `/settings`
 
@@ -35,3 +39,14 @@ Frontend assumptions:
 - same-origin `/api` is preferred behind Front Door and kGateway
 - the browser sees one API base URL, but kGateway splits traffic to identity, finance, and documents services
 - `NEXT_PUBLIC_AUTH_MODE=dev-local` is only for local development and tests
+
+2026-06-15 Phase 1 note:
+
+- added `/onboarding` for employee department selection
+- `frontend/components/app-shell.tsx` now redirects employee users without completed onboarding to `/onboarding`
+- full role-specific layouts are intentionally deferred to later product-refactor phases
+
+2026-06-15 continued refactor note:
+
+- `frontend/components/app-shell.tsx` now exposes role-aware navigation for org owners, dept heads, and employees
+- the frontend currently implements the requested product pages as a functional baseline on top of the existing app routes

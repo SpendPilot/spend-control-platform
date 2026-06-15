@@ -23,14 +23,15 @@ function buildAdminConsentUrl(error: string) {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { authMode, error, login, devLogin, ready, token } = useAuth();
+  const { authMode, error, login, devLogin, profile, ready, token } = useAuth();
   const adminConsentUrl = error?.includes("AADSTS650052") ? buildAdminConsentUrl(error) : null;
 
   useEffect(() => {
     if (ready && token) {
-      router.push("/dashboard");
+      const needsOnboarding = profile?.effective_role === "employee" && !profile.membership.onboarding_completed;
+      router.push(needsOnboarding ? "/onboarding" : "/dashboard");
     }
-  }, [ready, token, router]);
+  }, [profile, ready, token, router]);
 
   return (
     <main className="flex min-h-screen items-center justify-center px-6 py-12">
@@ -77,12 +78,12 @@ export default function LoginPage() {
                   void devLogin({
                     email: "reviewer@local.test",
                     display_name: "Local Reviewer",
-                    role: "org_admin",
+                    role: "org_owner",
                   }).then(() => router.push("/dashboard"))
                 }
                 className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 px-4 py-3 text-sm font-medium dark:border-slate-700"
               >
-                Seed an organization admin session
+                  Seed an organization owner session
               </button>
             ) : null}
           </div>

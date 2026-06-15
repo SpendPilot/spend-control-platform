@@ -4,15 +4,17 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Bot,
   BadgeIndianRupee,
   ChevronRight,
   FileScan,
   LayoutDashboard,
   Menu,
   Moon,
+  ShieldAlert,
+  SlidersHorizontal,
   ReceiptText,
   Settings2,
-  ShieldCheck,
   Sun,
   X,
   WalletCards,
@@ -21,16 +23,6 @@ import { useTheme } from "next-themes";
 
 import { useAuth } from "@/components/auth-provider";
 import { cn } from "@/lib/utils";
-
-const navigation = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/expenses", label: "Expenses", icon: ReceiptText },
-  { href: "/approvals", label: "Approvals", icon: ShieldCheck },
-  { href: "/budgets", label: "Budgets", icon: WalletCards },
-  { href: "/documents", label: "Documents", icon: FileScan },
-  { href: "/scan", label: "Capture", icon: BadgeIndianRupee },
-  { href: "/settings", label: "Settings", icon: Settings2 },
-];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -46,6 +38,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [ready, token, router]);
 
   useEffect(() => {
+    if (!ready || !token || !profile) return;
+    const needsOnboarding = profile.effective_role === "employee" && !profile.membership.onboarding_completed;
+    if (needsOnboarding && pathname !== "/onboarding") {
+      router.push("/onboarding");
+    }
+    if (!needsOnboarding && pathname === "/onboarding") {
+      router.push("/dashboard");
+    }
+  }, [pathname, profile, ready, router, token]);
+
+  useEffect(() => {
     setMobileMenuOpen(false);
   }, [pathname]);
 
@@ -58,9 +61,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, [mobileMenuOpen]);
 
-  if (!ready || !token || !profile) {
+  if (
+    !ready ||
+    !token ||
+    !profile ||
+    (profile.effective_role === "employee" && !profile.membership.onboarding_completed)
+  ) {
     return null;
   }
+
+  const navigation =
+    profile.effective_role === "org_owner"
+      ? [
+          { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+          { href: "/expenses", label: "Expenses", icon: ReceiptText },
+          { href: "/spend-limits", label: "Spend Limits", icon: SlidersHorizontal },
+          { href: "/payment-priority", label: "Payment Priority", icon: ShieldAlert },
+          { href: "/ai-insights", label: "AI Insights", icon: Bot },
+          { href: "/budgets", label: "Budgets", icon: WalletCards },
+          { href: "/documents", label: "Bills Library", icon: FileScan },
+          { href: "/settings", label: "Departments & Users", icon: Settings2 },
+          { href: "/profile", label: "Profile", icon: BadgeIndianRupee },
+        ]
+      : profile.effective_role === "dept_head"
+        ? [
+            { href: "/dashboard", label: "Department Dashboard", icon: LayoutDashboard },
+            { href: "/expenses", label: "Expense Upload & Review", icon: ReceiptText },
+            { href: "/profile", label: "Department Profile", icon: Settings2 },
+          ]
+        : [
+            { href: "/dashboard", label: "Department Budget", icon: LayoutDashboard },
+            { href: "/expenses", label: "Upload Variable Expense", icon: ReceiptText },
+            { href: "/profile", label: "Profile", icon: Settings2 },
+          ];
 
   return (
     <div className="min-h-screen px-3 py-3 sm:px-4 sm:py-4 lg:px-6">
