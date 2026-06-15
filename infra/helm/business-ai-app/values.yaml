@@ -1,0 +1,165 @@
+namespace:
+  create: true
+  name: spend-control
+
+gateway:
+  enabled: true
+  className: kgateway
+  name: spend-control-gateway
+  listener:
+    port: 80
+    protocol: HTTP
+  tls:
+    enabled: false
+    port: 443
+    protocol: HTTPS
+    mode: Terminate
+    certificateSecretName: spend-control-gateway-origin-tls
+
+serviceAccount:
+  create: true
+  name: spend-control-workload
+  annotations: {}
+
+imagePullSecrets: []
+
+rollout:
+  revision: ""
+
+frontend:
+  image:
+    repository: spendcontrol/frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  replicaCount: 2
+  service:
+    port: 3000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+  nextPublicApiBaseUrl: /api
+
+identityService:
+  image:
+    repository: spendcontrol/backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  appModule: app.service_apps.identity:app
+  replicaCount: 2
+  service:
+    port: 8000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 192Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+
+financeService:
+  image:
+    repository: spendcontrol/backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  appModule: app.service_apps.finance:app
+  replicaCount: 2
+  service:
+    port: 8000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+
+documentsService:
+  image:
+    repository: spendcontrol/backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  appModule: app.service_apps.documents:app
+  replicaCount: 2
+  service:
+    port: 8000
+  resources:
+    requests:
+      cpu: 150m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  autoscaling:
+    enabled: false
+    minReplicas: 2
+    maxReplicas: 4
+    targetCPUUtilizationPercentage: 70
+
+migrationJob:
+  enabled: true
+  image:
+    repository: spendcontrol/backend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+routes:
+  frontendPathPrefix: /
+  identityPathPrefixes:
+    - /api/auth
+    - /api/admin
+    - /health
+    - /ready
+  financePathPrefixes:
+    - /api/finance
+  documentsPathPrefixes:
+    - /api/documents
+    - /api/ai
+
+env:
+  appEnv: production
+  backendCorsOrigins: https://example.z01.azurefd.net
+  financeDefaultCurrency: INR
+
+auth:
+  mode: entra
+  authority: https://login.microsoftonline.com/common
+  frontendClientId: ""
+  backendClientId: ""
+  backendAudience: ""
+  apiScope: ""
+  allowedTenantIds: ""
+  platformAdminEmails: ""
+
+azure:
+  tenantId: ""
+  managedIdentityClientId: ""
+  aiFoundryEndpoint: ""
+  aiProjectEndpoint: ""
+  aiModelDeployment: gpt-4o-mini
+  documentIntelligenceEndpoint: ""
+  storageAccountUrl: ""
+  storageContainerName: expense-documents
+
+secrets:
+  create: true
+  databaseUrl: ""
+  devAuthSecret: "dev-only-secret-change-me"

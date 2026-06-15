@@ -1,0 +1,187 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spend-control-identity
+  namespace: {{ include "business-ai-app.namespace" . }}
+spec:
+  replicas: {{ .Values.identityService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spend-control-identity
+  template:
+    metadata:
+      annotations:
+        spendcontrol.io/revision: {{ .Values.rollout.revision | quote }}
+      labels:
+        app.kubernetes.io/name: spend-control-identity
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: {{ include "business-ai-app.serviceAccountName" . }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+      containers:
+        - name: identity
+          image: "{{ .Values.identityService.image.repository }}:{{ .Values.identityService.image.tag }}"
+          imagePullPolicy: {{ .Values.identityService.image.pullPolicy }}
+          ports:
+            - containerPort: 8000
+          env:
+            - name: SERVICE_NAME
+              value: identity-service
+            - name: APP_MODULE
+              value: {{ .Values.identityService.appModule | quote }}
+          envFrom:
+            - configMapRef:
+                name: spend-control-config
+            - secretRef:
+                name: spend-control-secrets
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+          resources:
+{{ toYaml .Values.identityService.resources | indent 12 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spend-control-finance
+  namespace: {{ include "business-ai-app.namespace" . }}
+spec:
+  replicas: {{ .Values.financeService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spend-control-finance
+  template:
+    metadata:
+      annotations:
+        spendcontrol.io/revision: {{ .Values.rollout.revision | quote }}
+      labels:
+        app.kubernetes.io/name: spend-control-finance
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: {{ include "business-ai-app.serviceAccountName" . }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+      containers:
+        - name: finance
+          image: "{{ .Values.financeService.image.repository }}:{{ .Values.financeService.image.tag }}"
+          imagePullPolicy: {{ .Values.financeService.image.pullPolicy }}
+          ports:
+            - containerPort: 8000
+          env:
+            - name: SERVICE_NAME
+              value: finance-service
+            - name: APP_MODULE
+              value: {{ .Values.financeService.appModule | quote }}
+          envFrom:
+            - configMapRef:
+                name: spend-control-config
+            - secretRef:
+                name: spend-control-secrets
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+          resources:
+{{ toYaml .Values.financeService.resources | indent 12 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spend-control-documents
+  namespace: {{ include "business-ai-app.namespace" . }}
+spec:
+  replicas: {{ .Values.documentsService.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spend-control-documents
+  template:
+    metadata:
+      annotations:
+        spendcontrol.io/revision: {{ .Values.rollout.revision | quote }}
+      labels:
+        app.kubernetes.io/name: spend-control-documents
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: {{ include "business-ai-app.serviceAccountName" . }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+      containers:
+        - name: documents
+          image: "{{ .Values.documentsService.image.repository }}:{{ .Values.documentsService.image.tag }}"
+          imagePullPolicy: {{ .Values.documentsService.image.pullPolicy }}
+          ports:
+            - containerPort: 8000
+          env:
+            - name: SERVICE_NAME
+              value: documents-service
+            - name: APP_MODULE
+              value: {{ .Values.documentsService.appModule | quote }}
+          envFrom:
+            - configMapRef:
+                name: spend-control-config
+            - secretRef:
+                name: spend-control-secrets
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+          resources:
+{{ toYaml .Values.documentsService.resources | indent 12 }}
+{{- if .Values.migrationJob.enabled }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spend-control-migrate
+  namespace: {{ include "business-ai-app.namespace" . }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      annotations:
+        spendcontrol.io/revision: {{ .Values.rollout.revision | quote }}
+      labels:
+        azure.workload.identity/use: "true"
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "business-ai-app.serviceAccountName" . }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+      containers:
+        - name: migrate
+          image: "{{ .Values.migrationJob.image.repository }}:{{ .Values.migrationJob.image.tag }}"
+          imagePullPolicy: {{ .Values.migrationJob.image.pullPolicy }}
+          command: ["sh", "-c", "alembic upgrade head"]
+          env:
+            - name: SERVICE_NAME
+              value: migration-job
+          envFrom:
+            - configMapRef:
+                name: spend-control-config
+            - secretRef:
+                name: spend-control-secrets
+{{- end }}

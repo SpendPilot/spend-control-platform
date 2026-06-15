@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spend-control-frontend
+  namespace: {{ include "business-ai-app.namespace" . }}
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spend-control-frontend
+  template:
+    metadata:
+      annotations:
+        spendcontrol.io/revision: {{ .Values.rollout.revision | quote }}
+      labels:
+        app.kubernetes.io/name: spend-control-frontend
+    spec:
+      serviceAccountName: {{ include "business-ai-app.serviceAccountName" . }}
+{{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+{{- end }}
+      containers:
+        - name: frontend
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: spend-control-config
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+          resources:
+{{ toYaml .Values.frontend.resources | indent 12 }}

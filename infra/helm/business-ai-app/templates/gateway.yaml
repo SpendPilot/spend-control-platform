@@ -1,0 +1,29 @@
+{{- if .Values.gateway.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .Values.gateway.name }}
+  namespace: {{ include "business-ai-app.namespace" . }}
+spec:
+  gatewayClassName: {{ .Values.gateway.className }}
+  listeners:
+    - name: http
+      port: {{ .Values.gateway.listener.port }}
+      protocol: {{ .Values.gateway.listener.protocol }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+{{- if .Values.gateway.tls.enabled }}
+    - name: https
+      port: {{ .Values.gateway.tls.port }}
+      protocol: {{ .Values.gateway.tls.protocol }}
+      tls:
+        mode: {{ .Values.gateway.tls.mode }}
+        certificateRefs:
+          - kind: Secret
+            name: {{ .Values.gateway.tls.certificateSecretName }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+{{- end }}
+{{- end }}

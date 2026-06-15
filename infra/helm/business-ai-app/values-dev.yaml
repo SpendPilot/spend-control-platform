@@ -1,0 +1,19 @@
+env:
+  appEnv: development
+  backendCorsOrigins: http://localhost:3000
+
+auth:
+  mode: dev-local
+  authority: https://login.microsoftonline.com/common
+
+frontend:
+  replicaCount: 1
+
+identityService:
+  replicaCount: 1
+
+financeService:
+  replicaCount: 1
+
+documentsService:
+  replicaCount: 1

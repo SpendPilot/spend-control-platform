@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spend-control-config
+  namespace: {{ include "business-ai-app.namespace" . }}
+data:
+  APP_ENV: {{ .Values.env.appEnv | quote }}
+  BACKEND_CORS_ORIGINS: {{ .Values.env.backendCorsOrigins | quote }}
+  AUTH_MODE: {{ .Values.auth.mode | quote }}
+  AZURE_TENANT_ID: {{ .Values.azure.tenantId | quote }}
+  AZURE_CLIENT_ID: {{ .Values.azure.managedIdentityClientId | quote }}
+  ENTRA_FRONTEND_CLIENT_ID: {{ .Values.auth.frontendClientId | quote }}
+  ENTRA_BACKEND_CLIENT_ID: {{ .Values.auth.backendClientId | quote }}
+  ENTRA_BACKEND_AUDIENCE: {{ .Values.auth.backendAudience | quote }}
+  ENTRA_AUTHORITY: {{ .Values.auth.authority | quote }}
+  ENTRA_ALLOWED_TENANT_IDS: {{ .Values.auth.allowedTenantIds | quote }}
+  PLATFORM_ADMIN_EMAILS: {{ .Values.auth.platformAdminEmails | quote }}
+  AZURE_AI_FOUNDRY_ENDPOINT: {{ .Values.azure.aiFoundryEndpoint | quote }}
+  AZURE_AI_PROJECT_ENDPOINT: {{ .Values.azure.aiProjectEndpoint | quote }}
+  AZURE_AI_MODEL_DEPLOYMENT: {{ .Values.azure.aiModelDeployment | quote }}
+  AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: {{ .Values.azure.documentIntelligenceEndpoint | quote }}
+  AZURE_STORAGE_ACCOUNT_URL: {{ .Values.azure.storageAccountUrl | quote }}
+  AZURE_STORAGE_CONTAINER_NAME: {{ .Values.azure.storageContainerName | quote }}
+  FINANCE_DEFAULT_CURRENCY: {{ .Values.env.financeDefaultCurrency | quote }}
+  NEXT_PUBLIC_API_BASE_URL: {{ .Values.frontend.nextPublicApiBaseUrl | quote }}
+  NEXT_PUBLIC_AUTH_MODE: {{ .Values.auth.mode | quote }}
+  NEXT_PUBLIC_ENTRA_FRONTEND_CLIENT_ID: {{ .Values.auth.frontendClientId | quote }}
+  NEXT_PUBLIC_ENTRA_BACKEND_CLIENT_ID: {{ .Values.auth.backendClientId | quote }}
+  NEXT_PUBLIC_ENTRA_BACKEND_AUDIENCE: {{ .Values.auth.backendAudience | quote }}
+  NEXT_PUBLIC_ENTRA_API_SCOPE: {{ .Values.auth.apiScope | quote }}
+  NEXT_PUBLIC_ENTRA_AUTHORITY: {{ .Values.auth.authority | quote }}

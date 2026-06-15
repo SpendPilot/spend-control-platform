@@ -1,179 +1,117 @@
 # Spend Control Platform
 
-Deployment repo for the split Spend Control Console projects.
+Spend Control Platform is a multi-tenant business finance management application built for Microsoft Entra ID, Azure AI, and AKS.
 
-## Quick Start - Clone All Repositories
+Current target runtime:
 
-Use the provided clone script to set up all required repositories in one step:
-
-### Windows (PowerShell)
-
-```powershell
-./clone-all-repos.ps1 -BaseDir "C:\path\to\projects"
+```txt
+User
+  -> Azure Front Door Premium + WAF
+  -> HTTP origin to kGateway on AKS via Azure public origin FQDN
+  -> HTTPRoutes
+      -> frontend
+      -> identity-service
+      -> finance-service
+      -> documents-service
+  -> PostgreSQL Flexible Server (General Purpose, zone-redundant HA, geo-backup)
+  -> Azure Blob Storage
+  -> Azure AI Foundry
+  -> Azure AI Document Intelligence
 ```
 
-### macOS/Linux (Bash)
+## What is included
+
+- Multi-tenant organization model for both Entra workforce tenants and personal Microsoft accounts
+- Session-aware Entra auth with dev-only local fallback
+- Finance domain for budgets, expenses, approvals, documents, and audit events
+- Invoice and receipt extraction with Document Intelligence
+- AI policy/risk summaries with Azure AI Foundry plus local fallback behavior
+- AKS deployment assets using Gateway API and kGateway
+- Terraform stack that bootstraps Azure, AKS, Entra app registrations, workload identity, Helm releases, and Front Door
+- Front Door edge hardening with HTTPS at the edge, auth rate limiting at WAF, and Terraform-managed origin hostname wiring
+
+## Repository layout
+
+```txt
+frontend/                     Next.js application
+backend/                      FastAPI shared code + split service entrypoints
+infra/helm/business-ai-app/   Helm chart for frontend + 3 backend services
+infra/k8s/                    Raw Gateway API manifests
+terraform/azure/aks/          Azure + AKS + Front Door bootstrap
+docs/                         Architecture, deployment, and AI context
+```
+
+## Backend runtime shape
+
+- `app.main:app`: combined API for local development
+- `app.service_apps.identity:app`: auth, organization, session, and admin routes
+- `app.service_apps.finance:app`: budgets, dashboard, expenses, approvals
+- `app.service_apps.documents:app`: documents, scans, OCR, and AI analysis
+
+## Local development
+
+1. Copy `.env.example` to `.env`.
+2. Keep local auth enabled:
+   - `AUTH_MODE=dev-local`
+   - `NEXT_PUBLIC_AUTH_MODE=dev-local`
+3. Start the stack:
 
 ```bash
-./clone-all-repos.sh /path/to/projects
+docker compose up --build
 ```
 
-The script will clone all five repositories:
-- `spend-control-platform`
-- `spend-control-frontend`
-- `spend-control-control-service`
-- `spend-control-expense-service`
-- `spend-control-ai-service`
+Useful local checks:
 
-## Expected sibling repos
+```bash
+cd backend && pytest
+helm template spend-control infra/helm/business-ai-app
+```
 
-- `../spend-control-frontend`
-- `../spend-control-control-service`
-- `../spend-control-expense-service`
-- `../spend-control-ai-service`
+## Deployment references
 
-## Docker Compose - Local Development
+- [Architecture](docs/azure-infrastructure.md)
+- [AKS + Front Door + kGateway](docs/deployment/aks-kgateway-frontdoor.md)
+- [Terraform AKS runbook](docs/deployment/terraform-aks-runbook.md)
+- [Azure portal manual setup](docs/deployment/azure-portal-manual-setup.md)
+- [AKS Helm deployment](docs/deployment/aks-helm.md)
+- [AKS raw manifests](docs/deployment/aks-raw-yaml.md)
+- [Entra app setup](docs/deployment/azure-entra-setup.md)
+- [Managed identity and workload identity](docs/deployment/azure-managed-identity-setup.md)
+- [Azure AI Foundry and Document Intelligence](docs/deployment/azure-ai-foundry-setup.md)
+- [Environment variables](docs/deployment/environment-variables.md)
 
-The platform is split into three separate Docker Compose files for better separation of concerns:
-
-### 1. Infrastructure Services (PostgreSQL + Ollama)
-
-Start the infrastructure services first:
+Terraform helper for the live environment:
 
 ```powershell
-cd spend-control-platform
-docker compose -f docker-compose.infrastructure.yml up --build
+cd terraform/azure/aks
+powershell -ExecutionPolicy Bypass -File .\dev-workspace.ps1 -Action init
+powershell -ExecutionPolicy Bypass -File .\dev-workspace.ps1 -Action plan
 ```
 
-### 2. Backend Services (AI, Control, Expense Services)
+GitHub Actions path for the same live environment:
 
-In a new terminal:
+- workflow file: `.github/workflows/terraform-dev.yml`
+- PRs into `main` plan from branches named `terraform/*`
+- pushes to `main` apply against the live `dev` Terraform workspace
+- Azure auth uses Microsoft Entra OIDC, so there is no client secret to store in GitHub
+- the workflow signs into Azure, runs `terraform init`, selects the live `dev` workspace, refreshes the AKS kubeconfig, and then runs `terraform plan` or `terraform apply` directly in YAML
 
-```powershell
-cd spend-control-platform
-docker compose -f docker-compose.backend.yml up --build
-```
+Authentication note:
 
-For Azure VMSS mode on the backend scale set, use the Azure-specific env file:
+- Work or school accounts are grouped by their Entra tenant ID.
+- Personal Microsoft accounts that sign in directly through the Microsoft consumer tenant get their own isolated workspace.
+- Guest Microsoft accounts invited into a company Entra tenant stay inside that tenant workspace instead of creating a second personal workspace.
+- The frontend must request the API scope using the backend Application ID URI, not the backend client ID.
 
-```powershell
-Copy-Item .env.azure-vm.backend.example .env.azure-vm.backend
-# Replace <POSTGRES_FQDN>, <OLLAMA_PRIVATE_LB_IP>, and secrets first
-docker compose --env-file .env.azure-vm.backend -f docker-compose.backend.yml up --build -d
-```
+Current validated Azure posture:
 
-### 3. Frontend
+- Front Door terminates browser HTTPS at the edge and currently forwards to the AKS gateway over `HTTP`.
+- The Front Door origin is pinned to the gateway public IP's Azure cloudapp FQDN instead of the raw IP because that was the validated stable path for origin health checks and routing.
+- Terraform can now bind validated apex and `www` custom-domain IDs to separate Front Door routes plus the shared WAF security policy once those domain resources exist in Azure.
+- PostgreSQL now runs as `GP_Standard_D2s_v3` in `Central India` with `ZoneRedundant` HA and geo-redundant backup enabled.
+- Blob Storage defaults the account to OAuth auth for the application path, while shared-key auth remains enabled only so the current AzureRM/Terraform path can keep managing the account safely.
+- `myfinagent.online` and `www.myfinagent.online` still require manual DNS validation and Front Door custom-domain creation, but the validated live shape is now represented in Terraform as apex on the primary route and `www` on its own dedicated Front Door route.
 
-In another terminal:
+## AI context
 
-```powershell
-cd spend-control-platform
-docker compose -f docker-compose.frontend.yml up --build
-```
-
-### Environment Configuration
-
-Copy the example environment file to create your `.env` file:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-All services use environment variables defined in `.env` for configuration, including:
-- local PostgreSQL credentials for the local Docker Compose path
-- API endpoints and CORS origins
-- JWT secrets
-- Ollama model configuration
-- Frontend API URL via `NEXT_PUBLIC_API_BASE_URL`
-
-## Kubernetes
-
-Apply the manifests in `k8s/` after building and pushing the service images referenced in the YAML files.
-
-## Azure Terraform
-
-Two Azure infrastructure paths now live in this repo:
-
-- `terraform/azure/aks`
-- `terraform/azure/vm-docker`
-
-Custom reusable modules live under:
-
-- `terraform/azure/aks/modules`
-- `terraform/azure/vm-docker/modules`
-
-Recommended default:
-
-- use `AKS` as the main production target
-- keep `vm-docker` as the simpler fallback or first rollout option
-
-Resource group behavior:
-
-- `vm-docker` uses one primary resource group for the whole deployment
-- `aks` uses one primary resource group plus an Azure-required node resource group
-
-Read the design notes first:
-
-- [docs/azure-infrastructure.md](/c:/Users/lijaz/Desktop/PROJECT2/spend-control-platform/docs/azure-infrastructure.md)
-- [architecture.md](/c:/Users/lijaz/Desktop/PROJECT2/spend-control-platform/architecture.md)
-
-### AKS
-
-```powershell
-cd c:\Users\lijaz\Desktop\PROJECT2\spend-control-platform\terraform\azure\aks
-copy terraform.tfvars.example terraform.tfvars
-terraform init
-terraform plan
-terraform apply
-```
-
-### Regular Azure VM Scale Sets
-
-This path now uses three Linux VM scale sets plus Azure Database for PostgreSQL Flexible Server.
-
-```powershell
-cd c:\Users\lijaz\Desktop\PROJECT2\spend-control-platform\terraform\azure\vm-docker
-copy terraform.tfvars.example terraform.tfvars
-terraform init
-terraform plan
-terraform apply
-```
-
-To force all three VM scale sets to refresh cloud-init bootstrap with the latest repo code:
-
-```powershell
-cd c:\Users\lijaz\Desktop\PROJECT2\spend-control-platform
-.\scripts\rebootstrap_vm_docker_vms.ps1
-```
-
-Plan-only mode:
-
-```powershell
-.\scripts\rebootstrap_vm_docker_vms.ps1 -PlanOnly
-```
-
-What the VMSS path provisions:
-
-- public Azure Application Gateway WAF v2
-- one frontend VM scale set
-- one backend VM scale set
-- one data-ai VM scale set for Ollama
-- Azure Database for PostgreSQL Flexible Server in a delegated subnet
-- Docker-ready cloud-init on the scale set instances
-
-Important for VMSS mode:
-
-- `postgres` and `ollama` are Docker-local hostnames used only by the local Compose setup
-- in Azure VMSS mode, the backend scale set connects to PostgreSQL Flexible Server through its private FQDN
-- Ollama is exposed privately through an internal load balancer, surfaced as `ollama_private_load_balancer_ip`
-
-Module structure:
-
-- each deployment type owns its own `modules/` directory
-- the environment roots only compose those modules with environment-specific variables
-
-## Smoke Test
-
-```powershell
-py -3.13 scripts/smoke_test.py
-```
+Agent-facing repository context lives in `docs/ai-context/`.

@@ -31,19 +31,11 @@ variable "log_analytics_workspace_id" {
   type = string
 }
 
-variable "application_gateway_id" {
-  type = string
-}
-
 variable "system_subnet_id" {
   type = string
 }
 
-variable "frontend_subnet_id" {
-  type = string
-}
-
-variable "backend_subnet_id" {
+variable "user_subnet_id" {
   type = string
 }
 
@@ -59,27 +51,15 @@ variable "system_node_max_count" {
   type = number
 }
 
-variable "frontend_node_vm_size" {
+variable "user_node_vm_size" {
   type = string
 }
 
-variable "frontend_node_min_count" {
+variable "user_node_min_count" {
   type = number
 }
 
-variable "frontend_node_max_count" {
-  type = number
-}
-
-variable "backend_node_vm_size" {
-  type = string
-}
-
-variable "backend_node_min_count" {
-  type = number
-}
-
-variable "backend_node_max_count" {
+variable "user_node_max_count" {
   type = number
 }
 
@@ -93,11 +73,6 @@ variable "service_cidr" {
 
 variable "dns_service_ip" {
   type = string
-}
-
-variable "zones" {
-  type    = list(string)
-  default = ["1", "2", "3"]
 }
 
 variable "tags" {

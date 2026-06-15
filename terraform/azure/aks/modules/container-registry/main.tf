@@ -5,6 +5,6 @@ resource "azurerm_container_registry" "this" {
   sku                           = var.sku
   admin_enabled                 = var.admin_enabled
   public_network_access_enabled = var.public_network_access_enabled
-  zone_redundancy_enabled       = var.zone_redundancy_enabled
+  zone_redundancy_enabled       = var.sku == "Premium" ? var.zone_redundancy_enabled : false
   tags                          = var.tags
 }

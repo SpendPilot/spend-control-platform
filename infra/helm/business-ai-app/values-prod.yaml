@@ -1,0 +1,19 @@
+env:
+  appEnv: production
+  backendCorsOrigins: https://example.z01.azurefd.net
+
+auth:
+  mode: entra
+  authority: https://login.microsoftonline.com/common
+
+frontend:
+  replicaCount: 2
+
+identityService:
+  replicaCount: 2
+
+financeService:
+  replicaCount: 2
+
+documentsService:
+  replicaCount: 2
