@@ -1,11 +1,12 @@
 # Final Feature Map
 
-Last updated: 2026-06-15
+Last updated: 2026-06-16
 
 ## Org Owner
 
 - Dashboard
 - Expenses
+- Recurring expense request review
 - Spend Limits
 - Payment Priority
 - AI Insights
@@ -18,11 +19,11 @@ Last updated: 2026-06-15
 
 - Department Dashboard
 - Expense Upload & Review
-- Recurring Expense Request
+- Recurring Expense Request with optional bill upload
 - Department Profile
 
 ## Employee
 
 - Department Budget
-- Upload Variable Expense
+- Upload Variable Expense with bill upload
 - Profile

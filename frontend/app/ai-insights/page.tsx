@@ -28,7 +28,12 @@ export default function AIInsightsPage() {
   }
 
   useEffect(() => {
-    load();
+    if (!token) return;
+    setLoading(true);
+    apiFetch<ChatSession[]>("/api/ai/sessions", { token })
+      .then(setSessions)
+      .catch((err) => setError(getApiError(err)))
+      .finally(() => setLoading(false));
   }, [token]);
 
   async function ask(event: React.FormEvent<HTMLFormElement>) {

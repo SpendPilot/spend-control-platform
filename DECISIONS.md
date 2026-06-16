@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-06-15
+Last updated: 2026-06-16
 
 ## 2026-06-15 - D-001 - Use repo-level handoff docs plus existing `docs/ai-context/`
 
@@ -42,3 +42,20 @@ Status: Accepted
 Decision:
 - Implement the target product pages and role-aware navigation as a working baseline now.
 - Defer final UX polish and full compiler validation until Node tooling is available.
+
+## 2026-06-16 - D-006 - Keep additive migrations SQLite-compatible for local validation
+
+Status: Accepted
+
+Decision:
+- Update altered-table Alembic migrations to use batch operations where foreign keys and indexes are added to existing tables.
+- Preserve the additive schema shape while allowing local SQLite upgrade validation to succeed alongside PostgreSQL rollout planning.
+
+## 2026-06-16 - D-007 - Prefer locally buildable frontend validation inputs
+
+Status: Accepted
+
+Decision:
+- Remove runtime dependence on Google-hosted `next/font/google` downloads during local builds.
+- Pin frontend TypeScript to `5.6.3` for stable Next 14 validation in this repo.
+- Repair the local `next` install instead of introducing custom ambient type shims.

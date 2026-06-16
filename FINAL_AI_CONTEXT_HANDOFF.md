@@ -1,6 +1,6 @@
 # Final AI Context Handoff
 
-Last updated: 2026-06-15
+Last updated: 2026-06-16
 
 ## Source Of Truth Context Files
 
@@ -20,18 +20,18 @@ Last updated: 2026-06-15
 - Phase 1
 - Phase 2
 - Phase 3
-- Phase 9
-- Phase 10
-- Phase 13
-
-## Partially Completed Phases
-
 - Phase 4
 - Phase 5
 - Phase 6
 - Phase 7
 - Phase 8
+- Phase 9
+- Phase 10
 - Phase 11
+- Phase 13
+
+## Partially Completed Phases
+
 - Phase 12
 
 ## Files Changed
@@ -40,32 +40,34 @@ Last updated: 2026-06-15
 - backend finance and AI services/routes/schemas/models
 - additive migrations for Phase 1 and payment-ops expansion
 - frontend role-aware pages and navigation
+- frontend validation/tooling updates and bill-linked expense forms
 - repo-level context, cleanup, and final handoff docs
 
 ## Risky Areas
 
-- frontend build/lint/typecheck not executed locally
 - PostgreSQL migration path not validated locally
-- some UI flows still need refinement
+- long-term UX overlap between `expenses` and `approvals` still merits later consolidation
 
 ## Known Gaps
 
-- org-owner recurring-request UX can be improved
-- full frontend compiler validation remains pending
+- PostgreSQL Alembic validation is still pending in a real PostgreSQL runtime
+- some legacy docs still use pre-refactor role terminology
 
 ## Validation Results
 
 - backend `pytest`: PASS
-- frontend build: NOT RUN in this environment
-- frontend lint/typecheck: NOT RUN in this environment
+- SQLite `alembic upgrade head`: PASS after migration batch-operation fix
+- frontend typecheck: PASS
+- frontend lint: PASS
+- frontend build: PASS
 - PostgreSQL migration dry run: NOT RUN in this environment
-- safe follow-up cleanup pass: COMPLETE on 2026-06-15
+- cleanup review after broader validation: COMPLETE; no safe file deletions executed in this run
 
 ## Next Recommended Prompt
 
-- Validate the frontend with a working Node toolchain, fix any build/type issues, run a PostgreSQL Alembic dry run, and then do a focused UX cleanup pass for org-owner and dept-head workflows.
+- Run a PostgreSQL-backed Alembic validation pass, then do a focused cleanup/documentation consolidation pass for legacy wording and any remaining overlap between `expenses` and `approvals`.
 
 ## Ready For Later Repo / CI-CD / Infra Refactor?
 
 - Compatible: Yes
-- Safest timing: after frontend build validation and PostgreSQL migration validation
+- Safest timing: after PostgreSQL migration validation

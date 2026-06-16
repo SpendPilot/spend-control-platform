@@ -135,65 +135,81 @@ def upgrade() -> None:
     )
     op.create_index("ix_ai_chat_messages_organization_id", "ai_chat_messages", ["organization_id"], unique=False)
 
-    op.add_column("budgets", sa.Column("department_id", sa.String(length=36), nullable=True))
-    op.add_column("budgets", sa.Column("scope", sa.String(length=20), nullable=False, server_default="company"))
-    op.add_column("budgets", sa.Column("month", sa.Integer(), nullable=True))
-    op.add_column("budgets", sa.Column("year", sa.Integer(), nullable=True))
-    op.create_index("ix_budgets_department_id", "budgets", ["department_id"], unique=False)
-    op.create_foreign_key("fk_budgets_department_id_departments", "budgets", "departments", ["department_id"], ["id"])
+    with op.batch_alter_table("budgets", recreate="always") as batch_op:
+        batch_op.add_column(sa.Column("department_id", sa.String(length=36), nullable=True))
+        batch_op.add_column(sa.Column("scope", sa.String(length=20), nullable=False, server_default="company"))
+        batch_op.add_column(sa.Column("month", sa.Integer(), nullable=True))
+        batch_op.add_column(sa.Column("year", sa.Integer(), nullable=True))
+        batch_op.create_index("ix_budgets_department_id", ["department_id"], unique=False)
+        batch_op.create_foreign_key("fk_budgets_department_id_departments", "departments", ["department_id"], ["id"])
 
-    op.add_column("expenses", sa.Column("department_id", sa.String(length=36), nullable=True))
-    op.add_column("expenses", sa.Column("vendor_id", sa.String(length=36), nullable=True))
-    op.add_column("expenses", sa.Column("expense_type", sa.String(length=20), nullable=False, server_default="variable"))
-    op.add_column("expenses", sa.Column("dept_head_reviewer_user_id", sa.String(length=36), nullable=True))
-    op.add_column("expenses", sa.Column("org_owner_approver_user_id", sa.String(length=36), nullable=True))
-    op.add_column("expenses", sa.Column("rejection_reason", sa.Text(), nullable=True))
-    op.add_column("expenses", sa.Column("payment_status", sa.String(length=20), nullable=False, server_default="unpaid"))
-    op.create_index("ix_expenses_department_id", "expenses", ["department_id"], unique=False)
-    op.create_index("ix_expenses_vendor_id", "expenses", ["vendor_id"], unique=False)
-    op.create_index("ix_expenses_dept_head_reviewer_user_id", "expenses", ["dept_head_reviewer_user_id"], unique=False)
-    op.create_index("ix_expenses_org_owner_approver_user_id", "expenses", ["org_owner_approver_user_id"], unique=False)
-    op.create_foreign_key("fk_expenses_department_id_departments", "expenses", "departments", ["department_id"], ["id"])
-    op.create_foreign_key("fk_expenses_vendor_id_vendors", "expenses", "vendors", ["vendor_id"], ["id"])
-    op.create_foreign_key("fk_expenses_dept_head_reviewer_user_id_users", "expenses", "users", ["dept_head_reviewer_user_id"], ["id"])
-    op.create_foreign_key("fk_expenses_org_owner_approver_user_id_users", "expenses", "users", ["org_owner_approver_user_id"], ["id"])
+    with op.batch_alter_table("expenses", recreate="always") as batch_op:
+        batch_op.add_column(sa.Column("department_id", sa.String(length=36), nullable=True))
+        batch_op.add_column(sa.Column("vendor_id", sa.String(length=36), nullable=True))
+        batch_op.add_column(sa.Column("expense_type", sa.String(length=20), nullable=False, server_default="variable"))
+        batch_op.add_column(sa.Column("dept_head_reviewer_user_id", sa.String(length=36), nullable=True))
+        batch_op.add_column(sa.Column("org_owner_approver_user_id", sa.String(length=36), nullable=True))
+        batch_op.add_column(sa.Column("rejection_reason", sa.Text(), nullable=True))
+        batch_op.add_column(sa.Column("payment_status", sa.String(length=20), nullable=False, server_default="unpaid"))
+        batch_op.create_index("ix_expenses_department_id", ["department_id"], unique=False)
+        batch_op.create_index("ix_expenses_vendor_id", ["vendor_id"], unique=False)
+        batch_op.create_index("ix_expenses_dept_head_reviewer_user_id", ["dept_head_reviewer_user_id"], unique=False)
+        batch_op.create_index("ix_expenses_org_owner_approver_user_id", ["org_owner_approver_user_id"], unique=False)
+        batch_op.create_foreign_key("fk_expenses_department_id_departments", "departments", ["department_id"], ["id"])
+        batch_op.create_foreign_key("fk_expenses_vendor_id_vendors", "vendors", ["vendor_id"], ["id"])
+        batch_op.create_foreign_key(
+            "fk_expenses_dept_head_reviewer_user_id_users",
+            "users",
+            ["dept_head_reviewer_user_id"],
+            ["id"],
+        )
+        batch_op.create_foreign_key(
+            "fk_expenses_org_owner_approver_user_id_users",
+            "users",
+            ["org_owner_approver_user_id"],
+            ["id"],
+        )
 
-    op.add_column("documents", sa.Column("department_id", sa.String(length=36), nullable=True))
-    op.add_column("documents", sa.Column("linked_expense_type", sa.String(length=30), nullable=True))
-    op.add_column("documents", sa.Column("linked_expense_id", sa.String(length=36), nullable=True))
-    op.create_index("ix_documents_department_id", "documents", ["department_id"], unique=False)
-    op.create_foreign_key("fk_documents_department_id_departments", "documents", "departments", ["department_id"], ["id"])
+    with op.batch_alter_table("documents", recreate="always") as batch_op:
+        batch_op.add_column(sa.Column("department_id", sa.String(length=36), nullable=True))
+        batch_op.add_column(sa.Column("linked_expense_type", sa.String(length=30), nullable=True))
+        batch_op.add_column(sa.Column("linked_expense_id", sa.String(length=36), nullable=True))
+        batch_op.create_index("ix_documents_department_id", ["department_id"], unique=False)
+        batch_op.create_foreign_key("fk_documents_department_id_departments", "departments", ["department_id"], ["id"])
 
 
 def downgrade() -> None:
-    op.drop_constraint("fk_documents_department_id_departments", "documents", type_="foreignkey")
-    op.drop_index("ix_documents_department_id", table_name="documents")
-    op.drop_column("documents", "linked_expense_id")
-    op.drop_column("documents", "linked_expense_type")
-    op.drop_column("documents", "department_id")
+    with op.batch_alter_table("documents", recreate="always") as batch_op:
+        batch_op.drop_constraint("fk_documents_department_id_departments", type_="foreignkey")
+        batch_op.drop_index("ix_documents_department_id")
+        batch_op.drop_column("linked_expense_id")
+        batch_op.drop_column("linked_expense_type")
+        batch_op.drop_column("department_id")
 
-    op.drop_constraint("fk_expenses_org_owner_approver_user_id_users", "expenses", type_="foreignkey")
-    op.drop_constraint("fk_expenses_dept_head_reviewer_user_id_users", "expenses", type_="foreignkey")
-    op.drop_constraint("fk_expenses_vendor_id_vendors", "expenses", type_="foreignkey")
-    op.drop_constraint("fk_expenses_department_id_departments", "expenses", type_="foreignkey")
-    op.drop_index("ix_expenses_org_owner_approver_user_id", table_name="expenses")
-    op.drop_index("ix_expenses_dept_head_reviewer_user_id", table_name="expenses")
-    op.drop_index("ix_expenses_vendor_id", table_name="expenses")
-    op.drop_index("ix_expenses_department_id", table_name="expenses")
-    op.drop_column("expenses", "payment_status")
-    op.drop_column("expenses", "rejection_reason")
-    op.drop_column("expenses", "org_owner_approver_user_id")
-    op.drop_column("expenses", "dept_head_reviewer_user_id")
-    op.drop_column("expenses", "expense_type")
-    op.drop_column("expenses", "vendor_id")
-    op.drop_column("expenses", "department_id")
+    with op.batch_alter_table("expenses", recreate="always") as batch_op:
+        batch_op.drop_constraint("fk_expenses_org_owner_approver_user_id_users", type_="foreignkey")
+        batch_op.drop_constraint("fk_expenses_dept_head_reviewer_user_id_users", type_="foreignkey")
+        batch_op.drop_constraint("fk_expenses_vendor_id_vendors", type_="foreignkey")
+        batch_op.drop_constraint("fk_expenses_department_id_departments", type_="foreignkey")
+        batch_op.drop_index("ix_expenses_org_owner_approver_user_id")
+        batch_op.drop_index("ix_expenses_dept_head_reviewer_user_id")
+        batch_op.drop_index("ix_expenses_vendor_id")
+        batch_op.drop_index("ix_expenses_department_id")
+        batch_op.drop_column("payment_status")
+        batch_op.drop_column("rejection_reason")
+        batch_op.drop_column("org_owner_approver_user_id")
+        batch_op.drop_column("dept_head_reviewer_user_id")
+        batch_op.drop_column("expense_type")
+        batch_op.drop_column("vendor_id")
+        batch_op.drop_column("department_id")
 
-    op.drop_constraint("fk_budgets_department_id_departments", "budgets", type_="foreignkey")
-    op.drop_index("ix_budgets_department_id", table_name="budgets")
-    op.drop_column("budgets", "year")
-    op.drop_column("budgets", "month")
-    op.drop_column("budgets", "scope")
-    op.drop_column("budgets", "department_id")
+    with op.batch_alter_table("budgets", recreate="always") as batch_op:
+        batch_op.drop_constraint("fk_budgets_department_id_departments", type_="foreignkey")
+        batch_op.drop_index("ix_budgets_department_id")
+        batch_op.drop_column("year")
+        batch_op.drop_column("month")
+        batch_op.drop_column("scope")
+        batch_op.drop_column("department_id")
 
     op.drop_index("ix_ai_chat_messages_organization_id", table_name="ai_chat_messages")
     op.drop_table("ai_chat_messages")

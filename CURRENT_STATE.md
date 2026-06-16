@@ -1,6 +1,6 @@
 # Current State
 
-Last updated: 2026-06-15
+Last updated: 2026-06-16
 
 ## Scope Of This Run
 
@@ -35,30 +35,32 @@ Last updated: 2026-06-15
 - Phase 1: COMPLETE
 - Phase 2: COMPLETE
 - Phase 3: COMPLETE
-- Phase 4: PARTIAL but functional
-- Phase 5: PARTIAL but functional
-- Phase 6: PARTIAL but functional
-- Phase 7: PARTIAL but functional
-- Phase 8: PARTIAL but functional
+- Phase 4: COMPLETE
+- Phase 5: COMPLETE
+- Phase 6: COMPLETE
+- Phase 7: COMPLETE
+- Phase 8: COMPLETE
 - Phase 9: COMPLETE
 - Phase 10: COMPLETE
-- Phase 11: PARTIAL
+- Phase 11: COMPLETE
 - Phase 12: PARTIAL
 - Phase 13: COMPLETE
 
 ## What "Partial" Means Here
 
-- The backend and route surface for the requested workflows now exists.
-- The frontend exposes the new product areas and role-aware navigation.
-- Some UX details still need iteration and full frontend compiler/build validation.
+- The only remaining incomplete phase is Phase 12.
+- Product workflows and frontend validation are now complete in this environment.
+- PostgreSQL-specific migration validation still requires a runnable PostgreSQL environment.
 
 ## Validation State
 
 - Backend tests: PASS (`pytest` in `backend/`)
-- Frontend build: NOT VALIDATED locally because `node`, `npm`, and `pnpm` are unavailable in the current shell environment
-- Frontend lint/typecheck: NOT VALIDATED locally for the same reason
+- Alembic upgrade on SQLite validation database: PASS after making Phase 1 and Phase 2 migrations SQLite-safe for altered tables
+- Frontend typecheck: PASS (`node ./node_modules/typescript/bin/tsc --noEmit` in `frontend/`)
+- Frontend lint: PASS (`npm run lint` in `frontend/`)
+- Frontend build: PASS (`npm run build` in `frontend/`)
 - PostgreSQL migration dry run: NOT VALIDATED in this environment
-- Post-phase cleanup pass: COMPLETE for safe non-destructive fixes (frontend text cleanup, finance route import cleanup, Entra role terminology update)
+- Post-phase cleanup pass: COMPLETE for safe non-destructive fixes; no safe file deletions were identified in this run
 
 ## Key Files Added Or Expanded In Later Phases
 
@@ -91,5 +93,9 @@ Last updated: 2026-06-15
 ## Notes
 
 - 2026-06-15: The codebase now represents a functional payment-operations baseline inside the original unsplit SpendPilot repo.
-- 2026-06-15: The main remaining execution risk is frontend build/type validation, not backend correctness.
+- 2026-06-15: The main remaining execution risk is now PostgreSQL rollout validation, not frontend or backend correctness.
 - 2026-06-15: Follow-up cleanup removed stale user-facing role wording in deployment docs and fixed mojibake in the settings page without changing product behavior.
+- 2026-06-16: Validation rerun confirmed backend tests still pass and exposed a real frontend package-lock/install issue rather than a missing Node runtime.
+- 2026-06-16: Alembic migrations `20260615_0002` and `20260615_0003` were updated to use batch table rewrites for altered tables so local SQLite validation succeeds.
+- 2026-06-16: Frontend validation now passes after repairing the local Next install, pinning TypeScript to `5.6.3`, and removing runtime dependence on Google-hosted font downloads during build.
+- 2026-06-16: Org-owner recurring-request review, department reassignment, and bill-linked expense submission are now exposed directly in the frontend workflows.

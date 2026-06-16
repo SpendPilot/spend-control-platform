@@ -45,7 +45,18 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
-    load();
+    if (!token) return;
+    setLoading(true);
+    Promise.all([
+      apiFetch<Member[]>("/api/admin/members", { token }).catch(() => []),
+      apiFetch<Department[]>("/api/admin/departments", { token }).catch(() => []),
+    ])
+      .then(([nextMembers, nextDepartments]) => {
+        setMembers(nextMembers);
+        setDepartments(nextDepartments);
+      })
+      .catch((nextError) => setError(getApiError(nextError)))
+      .finally(() => setLoading(false));
   }, [token]);
 
   async function updateMember(memberId: string, payload: Record<string, unknown>) {
@@ -118,6 +129,24 @@ export default function SettingsPage() {
                   <div className="mt-2 text-sm text-slate-500">
                     {member.user?.email} - {member.department?.name || "No department"} - {member.role} - {member.status}
                   </div>
+                  {member.role !== "org_owner" ? (
+                    <div className="mt-4 flex flex-col gap-2 sm:max-w-xs">
+                      <label className="text-xs uppercase tracking-[0.2em] text-slate-400">Department</label>
+                      <select
+                        className="rounded-2xl border px-4 py-3 text-sm"
+                        value={member.department?.id || ""}
+                        disabled={saving}
+                        onChange={(event) => void updateMember(member.id, { department_id: event.target.value || null })}
+                      >
+                        <option value="">Unassigned</option>
+                        {departments.map((department) => (
+                          <option key={department.id} value={department.id}>
+                            {department.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap gap-3">
                   {member.role !== "org_owner" ? (

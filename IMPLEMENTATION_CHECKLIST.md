@@ -1,6 +1,6 @@
 # Implementation Checklist
 
-Last updated: 2026-06-15
+Last updated: 2026-06-16
 
 ## Phase -1
 
@@ -39,6 +39,7 @@ Last updated: 2026-06-15
 
 - [x] Extend data model additively for vendors, recurring expenses, recurring requests, spend limits, payment priorities, AI chat, and richer budgets/expenses/documents
 - [x] Create additive migration docs and migration files
+- [x] Make altered-table migrations validate on SQLite using Alembic batch operations
 
 ## Phase 3
 
@@ -54,7 +55,7 @@ Last updated: 2026-06-15
 - [x] Add role-aware navigation baseline
 - [x] Preserve onboarding redirect behavior
 - [x] Keep pages tenant-scoped
-- [ ] Full separate role-specific layout system
+- [x] Role-specific workspace shell and access flow
 
 ## Phase 5
 
@@ -86,6 +87,7 @@ Last updated: 2026-06-15
 - [x] Preserve document extraction
 - [x] Link extracted documents into variable-expense flow
 - [x] Expose bills-library metadata for linked expense context
+- [x] Allow frontend expense forms to upload and link supporting bills
 
 ## Phase 9
 
@@ -101,13 +103,15 @@ Last updated: 2026-06-15
 ## Phase 11
 
 - [x] Cleanup planning docs
-- [ ] Safe product-level deletions after broader validation
+- [x] Re-run cleanup review after broader validation
+- [x] Confirm no safe product-level deletions should be executed in this run
 
 ## Phase 12
 
 - [x] Backend tests
 - [x] Document validation limits and remaining gaps
-- [ ] Frontend build/lint/typecheck
+- [x] SQLite Alembic upgrade validation
+- [x] Frontend build/lint/typecheck
 - [ ] PostgreSQL migration validation
 
 ## Phase 13

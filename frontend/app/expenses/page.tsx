@@ -73,6 +73,9 @@ export default function ExpensesPage() {
     billing_cycle: "monthly",
     priority: "pay_this_week",
   });
+  const [employeeFile, setEmployeeFile] = useState<File | null>(null);
+  const [requestFile, setRequestFile] = useState<File | null>(null);
+  const [recurringFile, setRecurringFile] = useState<File | null>(null);
 
   function load() {
     if (!token) return;
@@ -84,8 +87,8 @@ export default function ExpensesPage() {
       .then(([nextWorkspace, nextCategories]) => {
         setWorkspace(nextWorkspace);
         setCategories(nextCategories);
-        if (nextCategories[0] && !employeeForm.category_id) {
-          setEmployeeForm((current) => ({ ...current, category_id: nextCategories[0].id }));
+        if (nextCategories[0]) {
+          setEmployeeForm((current) => (current.category_id ? current : { ...current, category_id: nextCategories[0].id }));
         }
       })
       .catch((err) => setError(getApiError(err)))
@@ -93,7 +96,21 @@ export default function ExpensesPage() {
   }
 
   useEffect(() => {
-    load();
+    if (!token) return;
+    setLoading(true);
+    Promise.all([
+      apiFetch<Workspace>("/api/finance/expenses", { token }),
+      apiFetch<Category[]>("/api/finance/categories", { token }).catch(() => []),
+    ])
+      .then(([nextWorkspace, nextCategories]) => {
+        setWorkspace(nextWorkspace);
+        setCategories(nextCategories);
+        if (nextCategories[0]) {
+          setEmployeeForm((current) => (current.category_id ? current : { ...current, category_id: nextCategories[0].id }));
+        }
+      })
+      .catch((err) => setError(getApiError(err)))
+      .finally(() => setLoading(false));
   }, [token]);
 
   async function submitEmployeeExpense(event: React.FormEvent<HTMLFormElement>) {
@@ -102,15 +119,18 @@ export default function ExpensesPage() {
     setSaving(true);
     setError(null);
     try {
+      const documentId = employeeFile ? await uploadDocument(employeeFile) : null;
       await apiFetch("/api/finance/expenses/variable", {
         method: "POST",
         token,
         body: JSON.stringify({
           ...employeeForm,
           amount: employeeForm.amount,
+          document_id: documentId,
         }),
       });
       setEmployeeForm({ title: "", vendor_name: "", amount: "", expense_date: "", category_id: categories[0]?.id || "", description: "" });
+      setEmployeeFile(null);
       load();
     } catch (nextError) {
       setError(getApiError(nextError));
@@ -125,12 +145,14 @@ export default function ExpensesPage() {
     setSaving(true);
     setError(null);
     try {
+      const documentId = requestFile ? await uploadDocument(requestFile) : null;
       await apiFetch("/api/finance/recurring-expense-requests", {
         method: "POST",
         token,
-        body: JSON.stringify(requestForm),
+        body: JSON.stringify({ ...requestForm, bill_document_id: documentId }),
       });
       setRequestForm({ name: "", vendor_name: "", category: "", estimated_amount: "", billing_cycle: "monthly", reason: "" });
+      setRequestFile(null);
       load();
     } catch (nextError) {
       setError(getApiError(nextError));
@@ -145,12 +167,14 @@ export default function ExpensesPage() {
     setSaving(true);
     setError(null);
     try {
+      const documentId = recurringFile ? await uploadDocument(recurringFile) : null;
       await apiFetch("/api/finance/recurring-expenses", {
         method: "POST",
         token,
-        body: JSON.stringify(recurringForm),
+        body: JSON.stringify({ ...recurringForm, bill_document_id: documentId }),
       });
       setRecurringForm({ name: "", vendor_name: "", category: "", amount: "", billing_cycle: "monthly", priority: "pay_this_week" });
+      setRecurringFile(null);
       load();
     } catch (nextError) {
       setError(getApiError(nextError));
@@ -195,6 +219,20 @@ export default function ExpensesPage() {
     }
   }
 
+  async function uploadDocument(file: File): Promise<string> {
+    if (!token) {
+      throw new Error("Authentication is required before uploading a bill.");
+    }
+    const body = new FormData();
+    body.append("file", file);
+    const uploaded = await apiFetch<{ document: { id: string } }>("/api/documents/upload", {
+      method: "POST",
+      token,
+      body,
+    });
+    return uploaded.document.id;
+  }
+
   if (loading) return <LoadingState label="Loading expense workspace..." />;
   if (error) return <ErrorState label={error} />;
   if (!workspace) {
@@ -237,6 +275,7 @@ export default function ExpensesPage() {
                 <option value="pay_this_week">Pay this week</option>
                 <option value="can_wait">Can wait</option>
               </select>
+              <input className="rounded-2xl border px-4 py-3 md:col-span-2" type="file" accept=".pdf,image/*" onChange={(e) => setRecurringFile(e.target.files?.[0] || null)} />
               <button className="rounded-2xl bg-slate-950 px-4 py-3 text-white md:col-span-2" disabled={saving}>
                 {saving ? "Saving..." : "Create recurring expense"}
               </button>
@@ -258,6 +297,7 @@ export default function ExpensesPage() {
                 <option value="yearly">Yearly</option>
               </select>
               <input className="rounded-2xl border px-4 py-3 md:col-span-2" placeholder="Reason" value={requestForm.reason} onChange={(e) => setRequestForm({ ...requestForm, reason: e.target.value })} />
+              <input className="rounded-2xl border px-4 py-3 md:col-span-2" type="file" accept=".pdf,image/*" onChange={(e) => setRequestFile(e.target.files?.[0] || null)} />
               <button className="rounded-2xl bg-slate-950 px-4 py-3 text-white md:col-span-2" disabled={saving}>
                 {saving ? "Saving..." : "Send request to org owner"}
               </button>
@@ -281,6 +321,7 @@ export default function ExpensesPage() {
                 ))}
               </select>
               <input className="rounded-2xl border px-4 py-3" placeholder="Reason" value={employeeForm.description} onChange={(e) => setEmployeeForm({ ...employeeForm, description: e.target.value })} />
+              <input className="rounded-2xl border px-4 py-3 md:col-span-2" type="file" accept=".pdf,image/*" onChange={(e) => setEmployeeFile(e.target.files?.[0] || null)} />
               <button className="rounded-2xl bg-slate-950 px-4 py-3 text-white md:col-span-2" disabled={saving}>
                 {saving ? "Saving..." : "Submit to department head"}
               </button>
@@ -323,6 +364,29 @@ export default function ExpensesPage() {
                 ))}
             {!workspace.recurring_expenses.length && !workspace.recurring_requests.length ? (
               <EmptyState title="Nothing here yet" description="This section will populate as recurring spend workflows are used." />
+            ) : null}
+            {isOwner && workspace.recurring_requests.length ? (
+              <div className="space-y-4 pt-4">
+                <div className="font-display text-2xl">Recurring expense requests</div>
+                {workspace.recurring_requests.map((item) => (
+                  <div key={item.id} className="panel p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="font-medium">{item.name}</div>
+                        <div className="mt-1 text-sm text-slate-500">{item.vendor_name} - {item.category}</div>
+                      </div>
+                      <div className="text-right text-sm uppercase tracking-[0.2em] text-slate-500">{item.status}</div>
+                    </div>
+                    <div className="mt-3 text-sm">{item.currency} {Number(item.estimated_amount).toFixed(2)}</div>
+                    {item.status === "pending" ? (
+                      <div className="mt-4 flex gap-3">
+                        <button className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm text-white" onClick={() => void actOnRecurringRequest(item.id, true)}>Approve</button>
+                        <button className="rounded-2xl border border-rose-300 px-4 py-2 text-sm text-rose-700" onClick={() => void actOnRecurringRequest(item.id, false)}>Reject</button>
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
             ) : null}
           </div>
 

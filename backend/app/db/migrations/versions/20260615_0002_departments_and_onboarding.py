@@ -46,19 +46,18 @@ def upgrade() -> None:
     )
     op.create_index("ix_departments_organization_id", "departments", ["organization_id"], unique=False)
 
-    op.add_column("organization_memberships", sa.Column("department_id", sa.String(length=36), nullable=True))
-    op.add_column(
-        "organization_memberships",
-        sa.Column("onboarding_completed", sa.Boolean(), nullable=False, server_default=sa.false()),
-    )
-    op.create_index("ix_organization_memberships_department_id", "organization_memberships", ["department_id"], unique=False)
-    op.create_foreign_key(
-        "fk_organization_memberships_department_id_departments",
-        "organization_memberships",
-        "departments",
-        ["department_id"],
-        ["id"],
-    )
+    with op.batch_alter_table("organization_memberships", recreate="always") as batch_op:
+        batch_op.add_column(sa.Column("department_id", sa.String(length=36), nullable=True))
+        batch_op.add_column(
+            sa.Column("onboarding_completed", sa.Boolean(), nullable=False, server_default=sa.false()),
+        )
+        batch_op.create_index("ix_organization_memberships_department_id", ["department_id"], unique=False)
+        batch_op.create_foreign_key(
+            "fk_organization_memberships_department_id_departments",
+            "departments",
+            ["department_id"],
+            ["id"],
+        )
 
     bind = op.get_bind()
     organizations = list(bind.execute(sa.select(organization_table.c.id)))
@@ -103,13 +102,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_constraint(
-        "fk_organization_memberships_department_id_departments",
-        "organization_memberships",
-        type_="foreignkey",
-    )
-    op.drop_index("ix_organization_memberships_department_id", table_name="organization_memberships")
-    op.drop_column("organization_memberships", "onboarding_completed")
-    op.drop_column("organization_memberships", "department_id")
+    with op.batch_alter_table("organization_memberships", recreate="always") as batch_op:
+        batch_op.drop_constraint("fk_organization_memberships_department_id_departments", type_="foreignkey")
+        batch_op.drop_index("ix_organization_memberships_department_id")
+        batch_op.drop_column("onboarding_completed")
+        batch_op.drop_column("department_id")
     op.drop_index("ix_departments_organization_id", table_name="departments")
     op.drop_table("departments")
