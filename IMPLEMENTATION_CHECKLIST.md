@@ -119,3 +119,31 @@ Last updated: 2026-06-16
 - [x] Final summary docs
 - [x] Final API/data/role docs
 - [x] Final AI context handoff
+
+## Repo And Platform Planning Follow-Up
+
+- [x] Create `AI_CONTEXT.md`
+- [x] Create `TARGET_ARCHITECTURE.md`
+- [x] Create `REFACTOR_PLAN.md`
+- [x] Create `MIGRATION_CHECKLIST.md`
+- [x] Create `CLEANUP_STRATEGY.md`
+- [x] Create `SERVICE_BOUNDARIES.md`
+- [x] Create `SERVICE_SPLIT_READINESS.md`
+- [x] Create `LOCAL_DEV.md`
+- [x] Create `REPO_SPLIT_PLAN.md`
+- [x] Create `CLEANUP_PLAN.md`
+- [x] Create `CLEANUP_REPORT.md`
+- [x] Create `INFRA_REFACTOR_PLAN.md`
+- [x] Create `STATE_MIGRATION_PLAN.md`
+- [x] Create `SHARED_RESOURCE_STRATEGY.md`
+- [x] Create `FRONTDOOR_ORIGIN_STRATEGY.md`
+- [x] Create `SECURITY_BASELINE.md`
+- [x] Create `HELM_REFACTOR_PLAN.md`
+- [x] Create `GITOPS_STRATEGY.md`
+- [x] Create `CICD_STRATEGY.md`
+- [x] Create `CLEANUP_INFRA_DEPLOYMENT_PLAN.md`
+- [x] Create `FINAL_REFACTOR_SUMMARY.md`
+- [x] Create `FINAL_FOLDER_STRUCTURE.md`
+- [ ] Execute physical repo split
+- [ ] Execute Terraform/Helm/GitOps/CI-CD migration
+- [ ] Run toolchain-dependent validation in a fully equipped environment

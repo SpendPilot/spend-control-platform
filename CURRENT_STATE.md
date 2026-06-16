@@ -5,10 +5,11 @@ Last updated: 2026-06-16
 ## Scope Of This Run
 
 - Active scope in this continued run: progressed from Phase `-1` through the remaining product-refactor phases with honest `COMPLETE` vs `PARTIAL` status tracking.
+- Active scope in the latest continuation: complete the missing repo/platform refactor planning deliverables referenced by the `ai-plans`.
 - Still explicitly out of scope:
-  - repo split
-  - CI/CD refactor
-  - Terraform / Helm / GitOps restructuring
+  - physical repo split execution
+  - live CI/CD workflow replacement
+  - live Terraform / Helm / GitOps restructuring
   - destructive cleanup deletions
 
 ## Repository Shape Confirmed
@@ -51,6 +52,7 @@ Last updated: 2026-06-16
 - The only remaining incomplete phase is Phase 12.
 - Product workflows and frontend validation are now complete in this environment.
 - PostgreSQL-specific migration validation still requires a runnable PostgreSQL environment.
+- 2026-06-16: The user explicitly approved moving on to the repo/platform restructure plans even though PostgreSQL validation cannot be completed on this company-managed laptop.
 
 ## Validation State
 
@@ -99,3 +101,6 @@ Last updated: 2026-06-16
 - 2026-06-16: Alembic migrations `20260615_0002` and `20260615_0003` were updated to use batch table rewrites for altered tables so local SQLite validation succeeds.
 - 2026-06-16: Frontend validation now passes after repairing the local Next install, pinning TypeScript to `5.6.3`, and removing runtime dependence on Google-hosted font downloads during build.
 - 2026-06-16: Org-owner recurring-request review, department reassignment, and bill-linked expense submission are now exposed directly in the frontend workflows.
+- 2026-06-16: Repo/platform restructure work may proceed as a user-approved exception despite the remaining PostgreSQL validation gap; that gap must stay documented in risks and handoff notes.
+- 2026-06-16: Added the missing repo/platform planning docs required by later `ai-plans`, including repo split, service boundary, infra, Helm, GitOps, CI/CD, and cleanup source-of-truth files.
+- 2026-06-16: Those later phases are complete as documentation and handoff work, but physical code moves, Terraform state migration, workflow replacement, and destructive cleanup were intentionally deferred.

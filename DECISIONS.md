@@ -59,3 +59,30 @@ Decision:
 - Remove runtime dependence on Google-hosted `next/font/google` downloads during local builds.
 - Pin frontend TypeScript to `5.6.3` for stable Next 14 validation in this repo.
 - Repair the local `next` install instead of introducing custom ambient type shims.
+
+## 2026-06-16 - D-008 - Allow repo/platform restructure to proceed despite the remaining PostgreSQL validation gap
+
+Status: Accepted
+
+Decision:
+- Treat the missing PostgreSQL Alembic validation as an environment limitation on the user's company-managed laptop, not as a silent success.
+- Proceed with the repo/application/infrastructure planning and restructure workflow only because the user explicitly approved skipping that validation-only blocker for now.
+
+Impact:
+- Repo/platform restructure work can continue in this machine environment.
+- PostgreSQL validation remains a required follow-up before production rollout.
+
+Future change option:
+- Once a PostgreSQL runtime is available, rerun the Alembic validation and then downgrade this exception back to normal completed validation status.
+
+## 2026-06-16 - D-009 - Complete the ai-plan deliverables as planning and handoff documentation before physical execution
+
+Status: Accepted
+
+Decision:
+- Create the missing repo split and platform refactor source-of-truth files now.
+- Treat the later `ai-plans` as complete for planning/documentation deliverables, not as proof that the physical split or infra migration already happened.
+
+Impact:
+- Future agents now have a consistent plan of record for repo split, infra migration, cleanup, and validation sequencing.
+- The current monorepo remains the live working structure until execution happens in a fully equipped environment.
